@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Just A Bread Studios</title>
+    <meta name="description" content="Estudio de videojuegos indie enfocado en experiencias originales, gratuitas y totalmente Open Source. Conoce a nuestro equipo.">
+    <meta property="og:title" content="Just A Bread Studios">
+    <meta property="og:description" content="Creando los videojuegos más raros y originales.">
+    <meta property="og:image" content="/assets/jabsBanner.png">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="/assets/jabs_small.png" type="image/x-icon">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-brands/css/uicons-brands.css'>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-bold-rounded/css/uicons-bold-rounded.css'>
+</head>
+<body>
+    <nav id="navbar">
+        <img alt="Jabs Logo" src="/assets/black.png" onclick="gotoPage('home')" style="cursor: pointer;">
+
+        <button class="mobileNav" onclick="document.getElementById('navTouchSidebar').classList.toggle('show')"><i class="fi fi-br-menu-burger"></i></button>
+
+        <ul>
+            <li><a href="/home" data-link>Inicio</a></li>
+            <li>
+                <a href="/games" data-link>Juegos ⏷</a>
+                <ul class="nav_dropdown">
+                    <li><a href="/gamescatbreads" data-link>Cat Breads</a></li>
+                    <li><a href="#">Cat Breads Legacy</a></li>
+                </ul>
+            </li>
+            <li><a href="/aboutus" data-link>Sobre nosotros</a></li>
+            <li><a href="/contactus" data-link>Contactanos</a></li>
+            <li><a href="/news" data-link>Noticias</a></li>
+
+        </ul>
+    </nav>
+    <nav id="navTouchSidebar">
+        <button onclick="document.getElementById('navTouchSidebar').classList.remove('show')">Cerrar</button>
+        <ul>
+            <li><a href="/home" data-link>Inicio</a></li>
+            <li>
+                <a href="/games" data-link>Juegos ⏷</a>
+                <ul class="nav_dropdown">
+                    <li><a href="/gamescatbreads"  data-link>Cat Breads</a></li>
+                    <li><a href="#">Cat Breads Legacy</a></li>
+                </ul>
+            </li>
+            <li><a href="/aboutus" data-link>Sobre nosotros</a></li>
+            <li><a href="/contactus" data-link>Contactanos</a></li>
+            <li><a href="/news" data-link>Noticias</a></li>
+        </ul>
+    </nav>
+    <section class="page" id="page_home">
+        <section class="hero">
+            <video autoplay muted loop playsinline width="100%">
+                <source src="/assets/Cat Breads Trailer.webm" type="video/mp4">
+                Tu navegador no soporta la etiqueta de video.
+            </video>
+            <div class="hero-content">
+                <h1>Damos vida a las ideas más locas</h1>
+                <span>Somos un estudio independiente apasionado por crear juegos con personalidad, mecánicas únicas y personajes inolvidables.</span>
+                <button onclick="gotoPage('games')">Conoce nuestros proyectos</button>
+            </div>
+        </section>
+
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="Game Screenshot" src="/assets/promo/2.png">
+            </div>
+            <div class="sideright">
+                <h1>Nuestro lanzamiento mas reciente</h1>
+                <p>Cat Breads es un videojuego de plataformas, como Mario Bros u otros juegos similares, pero un poco diferente... 😸<br>El personaje principal es un gato, que también es un pan, y los enemigos, bueno... son perros salchichas. Las monedas también son galletas y hay muchos easter eggs (secretos).<br>¿Quieres saber más? ¡Descarga el juego GRATIS en la página de descargas! ✨ Gracias por mostrar interés en este videojuego :D</p>
+                <button onclick="gotoPage('games/catbreads')">Prueba una demo <i class="fi fi-rr-arrow-right"></i></button>
+            </div>
+        </section>
+        <section class="reveal groups inverted">
+            <div class="sideright">
+                <h1>Sobre nosotros</h1>
+                <p>Somos Just A Bread Studios, un equipo pequeño de 6 personas apasionadas por crear los videojuegos más raros, aleatorios y originales que se nos puedan ocurrir. Aunque el tiempo sea corto, nos aseguramos de que cada proyecto esté lleno de detalles, libre de anuncios molestos y con experiencias pensadas para el jugador. Además, creemos firmemente en la transparencia: nuestros proyectos son y siempre serán <strong>completamente Open Source</strong></p>
+                <button onclick="gotoPage('aboutus')">Conoce al equipo <i class="fi fi-rr-arrow-right"></i></button>
+            </div>
+            <div class="sideleft">
+                <img alt="About Screenshot" src="/assets/promo/5.png">
+            </div>
+        </section>
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="News Screenshot" src="/assets/promo/1.png">
+            </div>
+            <div class="sideright">
+                <h1>Noticias</h1>
+                <p>Se viene una nueva actualizacion de nuestro juego Cat Breads. Actualizaremos el juego a la version 26.0, ademas de migrar a un nuevo motor web en lugar de utilizar PenguinMod, esto debido a que nuestro equipo ha adquirido nuevos conocimientos y esta preparado para mejorar el juego y dar la mejor experiencia posible! Con esta nueva version podremos manejar mas libremente el juego y reduciremos drasticamente los tiempos de carga, ademas de agregar mejor compatibilidad, administracion online y cuentas mejoradas, y nuevos puzzles.</p>
+                <button onclick="gotoPage('news')">Ver esta noticia <i class="fi fi-rr-arrow-right"></i></button>
+            </div>
+        </section>
+
+    </section>
+    <section class="page hidden" id="page_games">
+        <h1>Todos nuestros juegos</h1>
+        <div class="games_wrapper">
+            <div class="card">
+                <img src="/assets/promo/3.png" alt="Game Logo">
+                <h1>Cat Breads</h1>
+                <p>Cat Breads es un videojuego de plataformas, pero un poco diferente... 😸 El personaje principal es un gato, que también es un pan, y los enemigos son perros salchichas.</p>
+                <button onclick="gotoPage('games/catbreads')">Ir al sitio</button>
+            </div>
+        </div>
+    </section>
+    <section class="page hidden" id="page_aboutus">
+        <h1>Sobre nosotros</h1>
+        <span>Hola! Somos Just A Bread Studios, un equipo pequeño de 6 personas apasionadas por crear los videojuegos más raros, aleatorios y originales que se nos puedan ocurrir. Aunque el tiempo sea corto (debido a trabajos del colegio y las pocas personas colaboradoras), nos aseguramos de que cada proyecto esté lleno de detalles, libre de anuncios molestos y con experiencias pensadas para el jugador. Además, creemos firmemente en la transparencia: nuestros proyectos son y siempre serán <strong>completamente Open Source</strong> y en la medida de lo posible, gratuitos y sin anuncios. Estamos seguros de que en los unicos lugares donde habran anuncios publicitarios en nuestros juegos sera para desbloquear habilidades u opciones especiales, pero estos anuncios seran completamente opcionales. Muchas gracias por leer, cuidate :3</span>
+        <h1>Nuestro equipo</h1>
+        <div class="colaborators_wrapper">
+            <div class="card">
+                <img src="/assets/colaborators/nyxwaoss.jpeg" alt="Person Image">
+                <h1>NyxWaoss</h1>
+                <p>Programador, diseñador de niveles, administrador y ✨️ CEO ✨️ de Just A Bread Studios</p>
+            </div>
+            <div class="card">
+                <img src="https://placehold.co/400x400" alt="Person Image">
+                <h1>Alix</h1>
+                <p>Administradora, tester, y departamento creativo</p>
+            </div>
+            <div class="card">
+                <img src="https://placehold.co/400x400" alt="Person Image">
+                <h1>Daniel</h1>
+                <p>Departamento creativo y tester</p>
+            </div>
+            <div class="card">
+                <img src="https://placehold.co/400x400" alt="Person Image">
+                <h1>El Estante</h1>
+                <p>Programador, diseñador de sprites, portadas y assets, tester, y departamento creativo</p>
+            </div>
+            <div class="card">
+                <img src="https://placehold.co/400x400" alt="Person Image">
+                <h1>Santi</h1>
+                <p>Departamento creativo, diseñador de sprites y tester</p>
+            </div>
+        </div>
+    </section>
+    <section class="page hidden" id="page_contactus">
+        <h1>Contactanos!</h1>
+        <span>Tienes ideas para el juego, algun feedback, o necesitas comunicarte con nosotros? Por favor, envia tu solicitud a este correo:</span>
+        <a href="mailto:justabreadstudios@gmail.com">justabreadstudios@gmail.com</a>
+        <span>Tardaremos de 2-4 días en responderte segun tu solicitud, muchas gracias!</span>
+    </section>
+    <section class="page hidden" id="page_news">
+        <h1>Noticias</h1>
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="News Screenshot" src="/assets/promo/1.png">
+            </div>
+            <div class="sideright">
+                <h1>Noticias</h1>
+                <p>Se viene una nueva actualizacion de nuestro juego Cat Breads. Actualizaremos el juego a la version 26.0, ademas de migrar a un nuevo motor web en lugar de utilizar PenguinMod, esto debido a que nuestro equipo ha adquirido nuevos conocimientos y esta preparado para mejorar el juego y dar la mejor experiencia posible! Con esta nueva version podremos manejar mas libremente el juego y reduciremos drasticamente los tiempos de carga, ademas de agregar mejor compatibilidad, administracion online y cuentas mejoradas, y nuevos puzzles.</p>
+                <button onclick="gotoPage('games/catbreads')">Prueba una demo <i class="fi fi-rr-arrow-right"></i></button>
+            </div>
+        </section>
+    </section>
+
+    <section class="page hidden" id="page_gamescatbreads">
+        <h1>Redirigiendo...</h1>
+    </section>
+
+    <footer class="site-footer">
+        <div class="brand">
+            <img src="/assets/jabs_w.png" alt="Just A Bread Studios Logo" onclick="window.location.href = '/index.html'" style="cursor: pointer;">
+            <p>Creando experiencias indie inolvidables</p>
+            <p>&copy; 2023-2026 Just A Bread Studios. Todos los derechos reservados.</p>
+            <p>Departamento de sistemas | Project NWP v1.0.0</p>
+        </div>
+        <div class="navigation">
+            <h4>Navegación</h4>
+            <a href="/home" data-link>Inicio</a>
+            <a href="/games" data-link>Juegos</a>
+            <a href="/aboutus" data-link>Sobre Nosotros</a>
+            <a href="/contactus" data-link>Contacto</a>
+        </div>
+        <div class="social">
+            <h4>Redes Sociales</h4>
+            <a href="#"><i class="fi fi-brands-discord"></i></a>
+            <a href="#"><i class="fi fi-brands-youtube"></i></a>
+            <a href="#"><i class="fi fi-brands-github"></i></a>
+        </div>
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>

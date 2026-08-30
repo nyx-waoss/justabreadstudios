@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Cat Breads</title>
+    <meta name="description" content="Videojuego plataformero gratuito con Gatos Panes y Perros Salchicha.">
+    <meta property="og:title" content="Cat Breads">
+    <meta property="og:description" content="Un juego raro de gatos panes y perros salchicha.">
+    <meta property="og:image" content="/assets/cbBanner.png">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="/assets/cb_small.png" type="image/x-icon">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-brands/css/uicons-brands.css'>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-bold-rounded/css/uicons-bold-rounded.css'>
+</head>
+<body>
+    <nav id="navbar">
+        <img alt="Jabs Logo" src="/assets/cb_d.png" onclick="gotoPage('home')" style="cursor: pointer;">
+
+        <button class="mobileNav" onclick="document.getElementById('navTouchSidebar').classList.toggle('show')"><i class="fi fi-br-menu-burger"></i></button>
+
+        <ul>
+            <li><a href="/home" data-link>Inicio</a></li>
+            <li><a href="https://catbreads.netlify.app/">Jugar</a></li>
+            <li><a href="/downloads" data-link>Descargas</a></li>
+            <li><a href="/changelog" data-link>Changelog</a></li>
+            <li><a href="/events" data-link>Eventos</a></li>
+        </ul>
+    </nav>
+    <nav id="navTouchSidebar">
+        <button onclick="document.getElementById('navTouchSidebar').classList.remove('show')">Cerrar</button>
+        <ul>
+            <li><a href="/home" data-link>Inicio</a></li>
+            <li><a href="/downloads" data-link>Descargas</a></li>
+            <li><a href="/changelog" data-link>Changelog</a></li>
+            <li><a href="/events" data-link>Eventos</a></li>
+        </ul>
+    </nav>
+
+    <section class="page" id="page_home">
+        <section class="hero">
+            <h1>Inicio</h1>
+            <div class="mark"></div>
+        </section>
+
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="Promotion Image" src="/assets/promo/1.png">
+            </div>
+            <div class="sideright">
+                <h1>Nueva update</h1>
+                <p>Se viene una nueva actualizacion de nuestro juego Cat Breads. Actualizaremos el juego a la version 26.0, ademas de migrar a un nuevo motor web en lugar de utilizar PenguinMod, esto debido a que nuestro equipo ha adquirido nuevos conocimientos y esta preparado para mejorar el juego y dar la mejor experiencia posible! Con esta nueva version podremos manejar mas libremente el juego y reduciremos drasticamente los tiempos de carga, ademas de agregar mejor compatibilidad, administracion online y cuentas mejoradas, y nuevos puzzles. Y lo mejor... no necesitas descargarlo para jugar! ✨😸 Solo haz click aqui: <a href="https://catbreads.netlify.app/">https://catbreads.netlify.app/</a> ⬅️</p>
+                <button onclick="gotoPage('events')">Ver evento <i class="fi fi-rr-arrow-right"></i></button>
+            </div>
+        </section>
+        <section class="reveal groups inverted">
+            <div class="sideright">
+                <h1>Sobre Cat Breads</h1>
+                <p>Cat Breads es un videojuego de plataformas, como Mario Bros u otros juegos similares, pero un poco diferente... 😸 El personaje principal es un gato, que también es un pan, y los enemigos, bueno... son perros salchichas. Las monedas también son galletas y hay muchos easter eggs (secretos). ¿Quieres saber más? ¡Descarga el juego GRATIS en la página de descargas! ✨ Gracias por mostrar interés en este videojuego :D</p>
+                <button onclick="gotoPage('download')">Jugar <i class="fi fi-rr-arrow-right"></i></button>
+            </div>
+            <div class="sideleft">
+                <img alt="Promotion Image" src="/assets/promo/3.png">
+            </div>
+        </section>
+        <section class="otheroptions">
+            <h2>Esto te podria interesar:</h2>
+            <div class="btngrid">
+                <button onclick="gotoPage('whatiscb')">Que es Cat Breads?</button>
+                <button onclick="gotoPage('changelog')">Changelog</button>
+                <button onclick="gotoPage('characters')">Personajes</button>
+                <button onclick="gotoPage('events')">Eventos</button>
+                <button onclick="gotoPage('curiosity')">Curiosidades</button>
+            </div>
+        </section>
+    </section>
+
+    <section class="page hidden" id="page_downloads">
+        <!-- Agregar enlaces aqui cuando lanzemos el juego... -->
+        <div class="maindownloads">
+            <h2>Ultima version (26.0)</h2>
+            <div class="buttonswrapper">
+                <div class="btnwrapper">
+                    <img alt="Folder Icon" src="/assets/icon/download.png">
+                    <button>Descargar .html</button>
+                </div>
+                <div class="btnwrapper">
+                    <img alt="Network Icon" src="/assets/icon/net.png">
+                    <button>Jugar online</button>
+                </div>
+            </div>
+            <div class="buttonswrapper">
+                <div class="btnwrapper">
+                    <img alt="Windows Icon" src="/assets/icon/win.jpg">
+                    <button>Windows</button>
+                </div>
+                <div class="btnwrapper">
+                    <img alt="Android Icon" src="/assets/icon/droid.png">
+                    <button>Android</button>
+                </div>
+                <div class="btnwrapper">
+                    <img alt="Linux Icon" src="/assets/icon/linux.jpg">
+                    <button>Linux</button>
+                </div>
+            </div>
+        </div>
+        <div class="allversions">
+            <h2>Todas las versiones:</h2>
+            <div class="buttonswrapper">
+                <span>Cat Breads <strong>Alpha 26.0</strong></span>
+                <button><img alt="Folder Icon" src="/assets/icon/download.png"> Descargas ⏷</button> <!-- todo Open dropdown -->
+            </div>
+
+        </div>
+    </section>
+
+    <section class="page hidden" id="page_changelog">
+        <h1>Changelog</h1>
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="Promotion Image" src="/assets/promo/1.png">
+            </div>
+            <div class="sideright">
+                <h2>Alpha 26.0 ✨ ¡La actualización que estabamos esperando! 😸</h2>
+                <p>¿Qué tenemos en esta nueva versión?</p>
+                <ul>
+                    <li>🎮 Migramos a HTML, JS, y Phaser.js! Esto nos permitira menos tiempos de espera, mayor libertad de desarrollo, y una experiencia mejorada!</li>
+                    <li>🌍️ Nuevos bloques y elementos para mejorar el ambiente y especio del personaje, agregandole mas vida al entorno</li>
+                    <li>⚡️ Cargas mas rapidas y optimizado para correr en cualquier parte!</li>
+                    <li>🧩 Nuevos niveles, saltos imposibles, y algun que otro easter egg oculto</li>
+                    <li>🎨 UI Levemente mejorada y optimizada</li>
+                </ul>
+            </div>
+        </section>
+    </section>
+
+    <section class="page hidden" id="page_events">
+        <h1>Eventos</h1>
+        <span>No hay eventos actualmente... vuelve mas tarde! :D</span>
+    </section>
+
+    <section class="page hidden" id="page_curiosity">
+        <h1>Curiosidades</h1>
+        <span>No hay curiosidades... vuelve mas tarde! :D</span>
+    </section>
+
+    <section class="page hidden" id="page_whatiscb">
+        <h1>Que es Cat Breads?</h1>
+        <span>Bienvenido a la web oficial de Cat Breads, creado por Just A Bread Studios<br>Cat Breads es un videojuego de plataformas, como Mario Bros u otros juegos similares, pero un poco diferente... El personaje principal es un gato, que también es un pan, y los enemigos, bueno... son perros salchichas. Las monedas también son galletas y hay muchos easter eggs (secretos). ¿Quieres saber más? ¡Descarga el juego GRATIS en la página de descargas! Gracias por mostrar interés en este videojuego :D</span>
+    </section>
+
+    <section class="page hidden" id="page_characters">
+        <h1>Todos los personajes de Cat Breads</h1>
+        <button onclick="window.location.href = 'https://sites.google.com/view/catbreadswiki'">Wiki oficial de Cat Breads <i class="fi fi-rr-arrow-right"></i></button>
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="Character Image" src="/assets/characters/catbread.png">
+            </div>
+            <div class="sideright">
+                <h2>Cat Bread</h2>
+                <p>The main character and player of the game</p>
+            </div>
+        </section>
+        <section class="reveal groups inverted">
+            <div class="sideright">
+                <h2>Salchi</h2>
+                <p>The enemy of cat bread</p>
+            </div>
+            <div class="sideleft">
+                <img alt="Character Image" src="/assets/characters/dog.png">
+            </div>
+        </section>
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="Character Image" src="/assets/characters/pancito.png">
+            </div>
+            <div class="sideright">
+                <h2>Pancito</h2>
+                <p>The cat bread assistant that you must rescue</p>
+            </div>
+        </section>
+        <section class="reveal groups inverted">
+            <div class="sideright">
+                <h2>Elopa</h2>
+                <p>The flying and most intelligent enemies of cat bread</p>
+            </div>
+            <div class="sideleft">
+                <img alt="Character Image" src="/assets/characters/elopa.png">
+            </div>
+        </section>
+        <section class="reveal groups">
+            <div class="sideleft">
+                <img alt="Character Image" src="/assets/characters/oldpuerco.png">
+            </div>
+            <div class="sideright">
+                <h2>Oldpuerco</h2>
+                <p>A water enemy!? That is what it is</p>
+            </div>
+        </section>
+        <section class="reveal groups inverted">
+            <div class="sideright">
+                <h2>Domu</h2>
+                <p>Very sweet, the kitten from the cat breads logo</p>
+            </div>
+            <div class="sideleft">
+                <img alt="Character Image" src="/assets/characters/domu.png">
+            </div>
+        </section>
+    </section>
+
+    <footer class="site-footer">
+        <div class="brand">
+            <img src="/assets/jabs_w.png" alt="Just A Bread Studios Logo" onclick="window.location.href = '/index.html'" style="cursor: pointer;">
+            <p>Creando experiencias indie inolvidables</p>
+            <p>&copy; 2023-2026 Just A Bread Studios. Todos los derechos reservados.</p>
+            <p>Departamento de sistemas | Project NWP v1.0.0</p>
+        </div>
+        <div class="navigation">
+            <h4>Navegación</h4>
+            <a href="/home" data-link>Inicio</a>
+            <a href="/downloads" data-link>Descargas</a>
+            <a href="/changelog" data-link>Changelog</a>
+            <a href="/events" data-link>Eventos</a>
+            <a href="/index.html">Pagina Principal de Just A Bread Studios</a>
+        </div>
+        <div class="social">
+            <h4>Redes Sociales</h4>
+            <a href="#"><i class="fi fi-brands-discord"></i></a>
+            <a href="#"><i class="fi fi-brands-youtube"></i></a>
+            <a href="#"><i class="fi fi-brands-github"></i></a>
+        </div>
+    </footer>
+    <script src="app.js"></script>
+</body>
+</html>
