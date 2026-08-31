@@ -3,39 +3,48 @@ const $ = (el) => document.getElementById(el);
 function hideAllPages() {
     document.body.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
 }
+
+function pathToPage(input) {
+    let p = input.replace(/^\/+|\/+$/g, '');
+    if (p === '' || p === 'index.html') return 'home';
+    return p;
+}
+
 let currentPage = "home";
 function gotoPage(page = "home") {
     document.getElementById('navTouchSidebar').classList.remove('show');
 
     hideAllPages();
-    let navToPage = page;
+    const navToPage = pathToPage(page);
+
     try {
-        if (page.includes('/')) {
-            navToPage = page.replace("/", "");
-        }
-
         if (navToPage.includes("gamescatbreads")) {
-          window.location.href = "/games/catbreads/index.html";
+            window.location.href = "/games/catbreads/index.html";
+            return;
         }
 
-        $(`page_${navToPage}`).classList.remove('hidden');
+        const target = $(`page_${navToPage}`);
+        if (!target) {
+            throw new Error(`No section found for "${navToPage}"`);
+        }
+        target.classList.remove('hidden');
 
-        history.pushState(null, "", `/${navToPage}`);
+        history.pushState(null, "", `/${navToPage === 'home' ? '' : navToPage}`);
         currentPage = navToPage;
 
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
+        const navbar = document.getElementById('navbar');
         if (navToPage !== "home") {
             navbar.classList.add('scrolled');
         } else {
             navbar.classList.remove('scrolled');
         }
-    } catch(e) {
-        //window.location.href = "/404.html";
+    } catch (e) {
         console.error(`[Debug] Cannot nav to page ${navToPage}:`, e);
+        hideAllPages();
+        $('page_home')?.classList.remove('hidden');
+        currentPage = 'home';
     }
 }
 window.addEventListener('popstate', (e) => {
@@ -51,6 +60,9 @@ document.querySelectorAll('a[data-link]').forEach(link => {
 
 //gotoPage('home');
 
+document.addEventListener('DOMContentLoaded', () => {
+  gotoPage(window.location.pathname);
+});
 
 
 window.addEventListener('scroll', () => {

@@ -1,0 +1,7 @@
+por si alguien se olvida de como hacer el deploy:
+
+git add .
+git commit -m "Descripción corta de lo que cambiaste"
+git push
+
+Listoop!!! Por favor no dejar api keys por ahi publicas en el codigo jeje
