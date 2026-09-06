@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>BreadNet Intranet</title>
+	<meta name="description" content="Plataforma de uso exclusivo y privado para empleados y colaboradores de Just A Bread Studios">
+	<link rel="canonical" href="https://justabreadstudios.netlify.app/breadnet/">
+	
+    <meta property="og:title" content="JABS BreadNet Intranet">
+    <meta property="og:description" content="Plataforma de uso exclusivo y privado para empleados y colaboradores de Just A Bread Studios">
+    <meta property="og:image" content="https://justabreadstudios.netlify.app/assets/jabsBanner.png">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://justabreadstudios.com/breadnet/index.html">
+	<link rel="icon" type="image/x-icon" href="/assets/breadnet_small.webp">
+
+	<link rel="stylesheet" href="styles.css">
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-brands/css/uicons-brands.css'>
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-bold-rounded/css/uicons-bold-rounded.css'>
+	<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-straight/css/uicons-regular-straight.css'>
+	<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-solid-rounded/css/uicons-solid-rounded.css'>
+
+	<script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "JABS BreadNet Intranet",
+        "url": "https://justabreadstudios.netlify.app/breadnet/index.html",
+        "description": "Plataforma de uso exclusivo y privado para empleados y colaboradores de Just A Bread Studios"
+        }
+    </script>
+
+	<script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
+</head>
+<body>
+  <nav id="sidebar" class="hidden">
+    <button onclick="gotoPage('home')"> <i class="fi fi-rr-house-chimney"></i> <span class="text">Inicio</span> </button>
+	<button onclick="gotoPage('tasks')"> <i class="fi fi-rr-task-checklist"></i> <span class="text">Tareas</span> </button>
+	<button onclick="gotoPage('files')"> <i class="fi fi-rr-folder-open"></i> <span class="text">Archivos</span> </button>
+	<button onclick="gotoPage('projects')"> <i class="fi fi-rr-workflow-alt"></i> <span class="text">Proyectos</span> </button>
+	<button onclick="gotoPage('requests')"> <i class="fi fi-rr-envelope"></i> <span class="text">Solicitudes</span> </button>
+	<button onclick="gotoPage('news')"> <i class="fi fi-rr-resources"></i> <span class="text">Novedades</span> </button>
+	<button onclick="gotoPage('strikes')"> <i class="fi fi-rr-portrait"></i> <span class="text">Strikes y Estado</span> </button>
+	<button onclick="gotoPage('manageemployees')" id="manageEmployeesBtn" class="hidden"> <i class="fi fi-rr-user-gear"></i> <span class="text">Gestionar Empleados</span> </button>
+	<button onclick="gotoPage('incomingrequests')" id="incomingRequestsBtn" class="hidden"> <i class="fi fi-rr-inbox"></i> <span class="text">Solicitudes Recibidas</span> </button>
+
+	<div class="bottom">
+		<button onclick="gotoPage('settings')"> <i class="fi fi-rr-settings"></i> <span class="text">Configuración</span> </button>
+	</div>
+  </nav>
+  <header id="header" class="hidden">
+	<button class="mobileNavBtn" onclick="showMobileSidebar()"><i class="fi fi-br-menu-burger"></i></button>
+	<button class="pfp" id="header_pfp" onclick="gotoPage('settings')">
+		<img alt="Account Photo" src="/assets/userdefault.jpg" id="headerPFPimg">
+		<span class="name">Usuario</span>
+	</button>
+
+	<div class="headerSearch">
+		<i class="fi fi-rr-search"></i>
+		<input type="text" id="global-search-input" placeholder="Buscar...">
+		<div id="global-search-results" class="hidden"></div>
+	</div>
+
+	<div class="leftside">
+		<span class="time">00:00 AM</span>
+		<button onclick="toggleNotificationsDialog()" class="notifBtn">
+			<i class="fi fi-rr-bell-notification-social-media"></i>
+			<span id="notifications-badge" class="hidden">0</span>
+		</button>
+		<button onclick="document.getElementById('logoutDialog').classList.toggle('show')"><i class="fi fi-rr-exit"></i></button>
+	</div>
+  </header>
+  <div id="logoutDialog">
+	<span>Esta seguro de cerrar sesión?</span>
+	<button id="btn-logout">Cerrar Sesión</button>
+  </div>
+  <div id="notificationsDialog">
+	<h4>Notificaciones</h4>
+	<div id="notifications-list"><span class="empty"><i class="fi fi-rr-party-horn"></i> No tienes notificaciones :D</span></div>
+  </div>
+
+  <div id="loadingModal" class="hidden">
+	<img alt="Loading Icon" src="/assets/loading.gif">
+	<span>Cargando...</span>
+  </div>
+
+  <div class="msgbox-overlay hide" id="msgbox-overlay">
+	<div class="msgbox-modal">
+		<i class="fi fi-rs-check-circle"></i>
+		<h2 class="title">Éxito!</h2>
+		<span class="info">dummy string</span>
+		<input class="inputText hidden" type="text" placeholder="Respuesta..." autocomplete="off">
+		<div class="buttons_wrapper">
+			<button class="option1 hidden">Cancelar</button>
+			<button class="option2">Aceptar</button>
+		</div>
+	</div>
+  </div>
+
+  <div id="softLockOverlay">
+	<img alt="Account Profile Photo" src="/assets/bg.png" id="softLockPFPImg">
+	<span>Ingresa tu PIN para reanudar la sesión</span>
+	<div class="bottom_wrapper">
+		<input type="text" id="softlockInput" maxlength="6">
+		<button onclick="verifySoftLockPIN()"><i class="fi fi-rr-arrow-right"></i></button>
+	</div>
+	<span id="softLockError">PIN Incorrecto</span>
+  </div>
+
+  <div id="softLockAlertOverlay">
+	<div class="softLockAlert">
+		<span><strong>Alerta</strong><br>Por inactividad, se cerrara la sesion actual en 1 minuto. Si necesita más tiempo, presione "Extender Sesión".</span>
+		<div class="btns">
+			<button onclick="softLockAlert_extendSession()"><i class="fi fi-sr-clock"></i> Extender sesión</button>
+		</div>
+	</div>
+  </div>
+
+  <div id="filePreview" class="hidden">
+	<button><i class="fi fi-br-cross"></i></button>
+	<div class="loading">
+		<img alt="Loading Icon" src="/assets/loading.gif">
+		<span>Cargando...</span>
+	</div>
+	<div class="preview">
+		<img alt="File Preview" class="image hidden">
+		<iframe class="pdfviewer hidden"></iframe>
+	</div>
+  </div>
+
+  <section class="page hidden" id="page_login">
+	<div id="notAvailable">
+		<img alt="BreadNet Logo" src="/assets/breadnet_d.png" class="logo">
+		<h1>Bienvenido</h1>
+		<span>BreadNet&trade; no esta disponible todavía :( Vuelve pronto!</span>
+	</div>
+	<div id="login-section" class="hidden">
+		<img alt="BreadNet Logo" src="/assets/breadnet_d.png" class="logo">
+		<input type="text" id="email" placeholder="Correo electrónico o usuario">
+		<input type="password" id="password" placeholder="Contraseña">
+		<button id="btn-login">Entrar</button>
+		<span id="login_error_message"></span>
+		<a href="#" id="login_reset_password" class="hidden">Restablecer Contraseña</a>
+		<img alt="loading" src="/assets/loading.gif" class="hidden" id="login-loading">
+		<div class="text">
+			<span>Departamento de Sistemas | BreadNet v1.0.0</span>
+			<span>Este sistema es exclusivo de uso privado.</span>
+		</div>
+	</div>
+  </section>
+
+  <section class="page hidden" id="page_home">
+	<div id="dashboard-section">
+		<header>
+			<h1 id="user-welcome">Bienvenido!</h1>
+		</header>
+		<div class="widgets">
+			<div class="widget status_ok" id="dashboard_widget_brief">
+				<div class="header">
+					<i class="fi fi-rr-check"></i>
+					<span class="title">Bienvenido!</span>
+				</div>
+				<span class="status">Todo correcto por aqui!</span>
+			</div>
+			<div class="widget status_ok" id="dashboard_widget_tasks">
+				<div class="header">
+					<i class="fi fi-rr-task-checklist"></i>
+					<span class="title">Tareas</span>
+				</div>
+				<span class="status">Sin tareas pendientes</span>
+			</div>
+			<div class="widget status_info" id="dashboard_widget_news">
+				<div class="newsPreviewBg" id="newsPreviewBg">
+					<span class="newsPreviewTitle empty" id="newsPreviewTitle">Sin Novedades</span>
+					<button onclick="gotoPage('news')">Ver Mas <i class="fi fi-rr-arrow-right"></i></button>
+				</div>
+			</div>
+		</div>
+	</div>
+  </section>
+
+  <section class="page hidden" id="page_tasks">
+	<section id="tasks-panel">
+		<button onclick="gotoPage('assigneetask')" id="assigneTaskBtn" class="hidden">Asignar Tarea</button>
+		<h3>Mis Tareas</h3>
+		<div id="tasks-list"></div>
+	</section>
+  </section>
+
+  <section class="page hidden" id="page_assigneetask">
+	<section id="admin-panel">
+		<h3>Asignar Tarea</h3>
+		<input type="text" id="task-title" placeholder="Título de la tarea">
+		<textarea type="text" id="task-desc" placeholder="Descripción de la tarea"></textarea>
+		<div class="files">
+			<i class="fi fi-sr-document"></i>
+			<span>Subir archivos</span>
+			<input type="file" id="task-file">
+		</div>
+	</section>
+	<section class="right">
+		<span>Asignar a:</span>
+		<select id="task-assignee"></select>
+		<button id="btn-create-task"><i class="fi fi-br-check"></i> Asignar Tarea</button>
+	</section>
+  </section>
+
+	<section class="page hidden" id="page_files">
+		<h3>Archivos y recursos</h3>
+
+		<div id="lowUsageAlert" class="hidden">
+			<h4><i class="fi fi-sr-triangle-warning"></i> Estos archivos casi no se usan:</h4>
+			<div id="lowUsageList" class="hidden"></div>
+			<button onclick="document.getElementById('lowUsageList').classList.toggle('hidden')">Mostrar</button>
+		</div>
+
+		<div id="admin-upload-file" class="hidden">
+			<input type="file" id="new-shared-file">
+			<button onclick="uploadSharedFile()"><i class="fi fi-rr-upload"></i> Subir Archivo</button>
+		</div>
+
+		<h4>Archivos Locales</h4>
+		<div id="files-container">
+			<div class="element">
+				<div class="preview">
+					<img alt="Document Preview" src="/assets/clientside_files/terminosycondiciones_preview.png">
+				</div>
+				<span class="name">Terminos y Condiciones</span>
+				<div class="btns"><button onclick="filePreview('/assets/clientside_files/terminosycondiciones_file.pdf')"><i class="fi fi-rr-eye"></i> Abrir</button><button class="btnsmall" onclick="fileDownload('/assets/clientside_files/terminosycondiciones_file.pdf', 'Terminos Y Condiciones')"><i class="fi fi-rr-download"></i></button></div>
+			</div>
+		</div>
+
+		<h4>Archivos Compartidos</h4>
+		<div id="dynamic-files-container"></div>
+	</section>
+
+  <section class="page hidden" id="page_projects">
+	<h3>Proyectos</h3>
+	<div class="topBackgroundImage"></div>
+	<div id="projects-container">
+		<div class="element">
+			<div class="preview">
+				<img alt="Project Preview" src="/assets/bg.png">
+			</div>
+			<span class="name">Cat Breads</span>
+			<div class="btns"><button onclick="window.open('https://justabreadstudios.netlify.app/games/catbreads/index.html/')"><i class="fi fi-rr-eye"></i> Abrir</button></div>
+		</div>
+	</div>
+  </section>
+
+	<section class="page hidden" id="page_requests">
+		<h3>Solicitudes</h3>
+		<div class="topBackgroundImage"></div>
+
+		<span>Enviar a:</span>
+		<select id="request-admin-select"></select>
+
+		<span>Seleccione una solicitud:</span>
+		<div class="options-container">
+			<div class="element">
+				<div class="preview"><img alt="Request Preview" src="/assets/documentsPile.png"></div>
+				<span class="name">Cambio de Proyecto</span>
+				<div class="btns"><button onclick="sendRequest('Cambio de Proyecto')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
+			</div>
+			<div class="element">
+				<div class="preview"><img alt="Request Preview" src="/assets/roleChange.png"></div>
+				<span class="name">Cambio de Area de Trabajo</span>
+				<div class="btns"><button onclick="sendRequest('Cambio de Area de Trabajo')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
+			</div>
+			<div class="element">
+				<div class="preview"><img alt="Request Preview" src="/assets/dataModify.png"></div>
+				<span class="name">Cambio de Datos</span>
+				<div class="btns"><button onclick="sendRequest('Cambio de Datos')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
+			</div>
+			<div class="element">
+				<div class="preview"><img alt="Request Preview" src="/assets/denyDocument.png"></div>
+				<span class="name">Renuncia</span>
+				<div class="btns"><button onclick="sendRequest('Renuncia')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
+			</div>
+		</div>
+
+		<span class="subtitle">Tus solicitudes:</span>
+		<div id="my-requests-list"></div>
+	</section>
+
+	<section class="page hidden" id="page_incomingrequests">
+		<h3>Solicitudes Recibidas</h3>
+		<div id="incoming-requests-list"></div>
+	</section>
+
+	<section class="page hidden" id="page_news">
+		<h3>Novedades</h3>
+
+		<div id="admin-create-announcement" class="hidden">
+			<button onclick="gotoPage('news_upload')"><i class="fi fi-br-plus"></i> Nueva Novedad</button>
+		</div>
+
+		<div id="announcements-list"></div>
+	</section>
+
+	<section class="page hidden" id="page_news_upload">
+		<h4>Publicar Novedad</h4>
+		<div class="wrapper">
+			<input type="text" id="announcement-title" placeholder="Título">
+			<span>Imagen:</span>
+			<input type="file" id="announcement-image" accept="image/*">
+			<textarea id="announcement-body" placeholder="Cuerpo de la novedad"></textarea>
+			<button onclick="createAnnouncement()"><i class="fi fi-rr-upload"></i> Publicar</button>
+		</div>
+	</section>
+
+  <section class="page hidden" id="page_strikes">
+	<h3>Estado de cuenta</h3>
+	<div class="top_wrapper">
+		<img alt="Account Profile Photo" src="/assets/userdefault.jpg" id="strikesPagePFPimg">
+		<div class="generalBrief">
+			<span class="title" id="briefTitle">Tienes un <c-gradient>buen desempeño</c-gradient>!</span>
+			<span id="briefStrikesCount"></span>
+			<span id="briefTasksCheck"><i class="fi fi-br-check"></i> Has entregado todos tus trabajos</span>
+			<span id="briefFrequencyCheck"><i class="fi fi-br-check"></i> Has ingresado a la plataforma con frecuencia</span>
+			<span id="briefStrikesCheck"><i class="fi fi-br-check"></i> No tienes ningun strike</span>
+		</div>
+	</div>
+	<span class="subtitle">Strikes:</span>
+	<div id="strikes-list"></div>
+  </section>
+
+  <section class="page hidden" id="page_manageemployees">
+	<h3>Gestionar Empleados</h3>
+	<div class="row">
+		<span>Empleado:</span>
+		<select id="manage-employee-select"></select>
+		<button onclick="loadEmployeeManagement()">Cargar Datos</button>
+	</div>
+
+	<div id="employeeManagementPanel" class="hidden">
+		<h4 id="manage-employee-name"></h4>
+		<div id="manage-ban-status"></div>
+
+		<h4>Usuario de acceso</h4>
+		<input type="text" id="manage-username-input" placeholder="username (sin espacios, sin números)">
+		<button onclick="updateEmployeeUsername()">Guardar Usuario</button>
+
+		<h4>Agregar Strike</h4>
+		<input type="text" id="strike-short-reason" placeholder="Motivo breve (obligatorio)">
+		<textarea id="strike-detailed-reason" placeholder="Detalle del motivo (obligatorio)"></textarea>
+		<button onclick="addStrike()"><i class="fi fi-sr-triangle-warning"></i> Agregar Strike</button>
+
+		<h4>Banear Empleado</h4>
+		<div class="row">
+			<label><input type="radio" name="ban-type" value="temporary" checked onchange="toggleBanUntilField()"> Temporal</label>
+			<label><input type="radio" name="ban-type" value="permanent" onchange="toggleBanUntilField()"> Permanente</label>
+		</div>
+		<div class="row" id="ban-until-row">
+			<span>Banear hasta el:</span>
+			<input type="datetime-local" id="ban-until-input">
+		</div>
+		<input type="text" id="ban-reason-input" placeholder="Razón del baneo (obligatorio)">
+		<button onclick="banEmployee()"><i class="fi fi-rr-ban"></i> Banear</button>
+		<button onclick="unbanEmployee()" id="unban-btn" class="hidden"><i class="fi fi-rr-lock-alt"></i> Quitar Baneo</button>
+
+		<h4>Strikes de este empleado</h4>
+		<div id="manage-strikes-list"></div>
+	</div>
+  </section>
+
+  <section class="page hidden" id="page_settings">
+	<h3>Configuración</h3>
+	<h4>Cuenta</h4>
+	<div class="row">
+		<img class="pfp" alt="Account Profile Photo" src="/assets/userdefault.jpg" id="settings_pfp">
+		<span id="settings_displayName">Usuario</span>
+		<button onclick="setting_changePFP()"><i class="fi fi-rr-picture"></i> Cambiar foto de perfil</button>
+	</div>
+	<div class="row">
+		<button onclick="setting_changePassword()"><i class="fi fi-rr-key"></i> Cambiar Contraseña</button>
+		<button onclick="setting_changePIN()"><i class="fi fi-rr-password-lock"></i> Cambiar PIN</button>
+	</div>
+	<div class="row">
+		<span id="settings_userExtraInfo">Usuario</span>
+	</div>
+
+	<h4>Seguridad</h4>
+	<div class="row">
+		<span>Bloqueo por inactividad</span>
+		<select id="settings_softLockSelect">
+			<option value="60000" selected>Luego de 1 minuto</option>
+			<option value="120000">Luego de 2 minutos</option>
+			<option value="180000">Luego de 3 minutos</option>
+			<option value="300000">Luego de 5 minutos</option>
+		</select>
+	</div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>

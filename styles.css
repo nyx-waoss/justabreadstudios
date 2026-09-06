@@ -137,9 +137,36 @@ nav .mobileNav i {
     width: 28px;
     height: 28px;
 }
-@media (max-width: 768px) {
+@media (max-width: 800px) {
     nav .mobileNav {
         display: flex;
+    }
+}
+
+#navbar ul li.special a {
+    background-color: rgb(0, 145, 255) !important;
+    color: white !important;
+    border-radius: 999em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    transition: box-shadow 0.2s ease, background-color 0.2s ease;
+}
+#navbar ul li.special i {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+#navbar ul li.special a:hover {
+    background-color: rgb(27, 156, 255) !important;
+    box-shadow: 0 6px 12px rgba(0, 162, 255, 0.5);
+}
+
+@media (max-width: 1100px) {
+    #navbar ul li.extra {
+        display: none !important;
     }
 }
 
@@ -191,7 +218,7 @@ nav.scrolled img {
     backdrop-filter: none;
     padding: 0;
 }
-@media (max-width: 768px) {
+@media (max-width: 800px) {
     nav ul {
         display: none;
     }
@@ -697,7 +724,7 @@ footer div {
     flex-direction: column;
     gap: 8px;
 
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 0.1);
     border-radius: 18px;
     padding: 12px;
     box-sizing: border-box;
