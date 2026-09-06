@@ -1,3 +1,37 @@
+# 1. Redirección limpia de index.html a la carpeta raíz para Cat Breads y BreadNet
+[[redirects]]
+  from = "/games/catbreads/index.html"
+  to = "/games/catbreads/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/breadnet/index.html"
+  to = "/breadnet/"
+  status = 301
+  force = true
+
+# 2. Redirección de www al subdominio principal de Netlify
+[[redirects]]
+  from = "https://www.justabreadstudios.netlify.app/*"
+  to = "https://justabreadstudios.netlify.app/:splat"
+  status = 301
+  force = true
+
+# 3. Soporte SPA para Cat Breads (captura rutas como /games/catbreads/level/1)
+[[redirects]]
+  from = "/games/catbreads/*"
+  to = "/games/catbreads/index.html"
+  status = 200
+
+# 4. Soporte SPA para BreadNet (captura rutas como /breadnet/dashboard)
+[[redirects]]
+  from = "/breadnet/*"
+  to = "/breadnet/index.html"
+  status = 200
+
+# 5. Catch-all / Soporte SPA para la aplicación principal de JABS (ej. /aboutus)
+# Esta regla DEBE ir al final de todo
 [[redirects]]
   from = "/*"
   to = "/index.html"
