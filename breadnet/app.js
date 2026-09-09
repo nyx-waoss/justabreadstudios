@@ -2,6 +2,41 @@ const $ = (el) => document.getElementById(el);
 function hideAllPages() {
     document.body.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
 }
+
+let loggedIn = false;
+
+function runDependentFunctionsOfPage(page) {
+	if (page === "strikes") {
+		loadMyAccountStatus();
+	}
+	if (page === "home") {
+		loadMyAccountStatus();
+    	loadLatestAnnouncementWidget();
+	}
+	if (page === "requests") {
+		populateRequestAdminSelect();
+		loadMyRequests();
+	}
+	if (page === "incomingrequests") {
+		loadIncomingRequests();
+	}
+	if (page === "files") {
+		loadSharedFiles();
+	}
+	if (page === "news") {
+		loadAnnouncements();
+	}
+	if (page === "stats") {
+	  	loadStatsPage();
+	}
+	if (page === "feedback") {
+	 	loadFeedbackList();
+	}
+	if (page === "directory") {
+		loadDirectory();
+	}
+}
+
 function gotoPage(page = "home") {
 	hideAllPages();
 	try {
@@ -9,7 +44,7 @@ function gotoPage(page = "home") {
 
 		$(`page_${page}`).classList.remove('hidden');
 
-		if (page === "login") {
+		if (!loggedIn) {
 			$('sidebar').classList.add('hidden');
 			$('header').classList.add('hidden');
 		} else {
@@ -17,32 +52,22 @@ function gotoPage(page = "home") {
 			$('header').classList.remove('hidden');
 		}
 
-		if (page === "strikes" && loggedIn) {
-			loadMyAccountStatus();
+		if (loggedIn) {
+			runDependentFunctionsOfPage(page);
 		}
-		if (page === "home" && loggedIn) {
-			loadMyAccountStatus();
-      loadLatestAnnouncementWidget();
+
+		if (page !== 'login' && loggedIn) {
+			supabaseClient.from('activity_log').insert([{ user_id: currentUser.id, event_type: 'page_view', page }]);
 		}
-		if (page === "requests" && loggedIn) {
-			populateRequestAdminSelect();
-			loadMyRequests();
-		}
-		if (page === "incomingrequests" && loggedIn) {
-			loadIncomingRequests();
-		}
-		if (page === "files" && loggedIn) {
-			loadSharedFiles();
-		}
-    if (page === "news" && loggedIn) {
-      loadAnnouncements();
-    }
 	} catch(e) {
 		console.error('Error when loading page:', e);
 	}
 }
 gotoPage('login');
 
+function toggleSidebarCategory(categoryId) {
+  $(categoryId).classList.toggle('open');
+}
 
 document.querySelectorAll('.page').forEach(page => {
 	page.addEventListener('click', () => {
@@ -74,13 +99,18 @@ function updateHeaderClock() {
 updateHeaderClock();
 setInterval(updateHeaderClock, 30000);
 
+const plataformActivated = localStorage.getItem('localTestingBN_activated'); //Comentar el viernes
+//const plataformActivated = "true"; //Descomentar el viernes
+
+$('notAvailable').classList.remove('hidden');
+$('login-section').classList.add('hidden');
 setTimeout(() => {
-  const plataformActivated = localStorage.getItem('localTestingBN_activated');
   if (plataformActivated && plataformActivated == "true") {
     $('notAvailable').classList.add('hidden');
     $('login-section').classList.remove('hidden');
   }
 }, 100);
+
 function activatePlataformLocal() {
   $('notAvailable').classList.add('hidden');
   $('login-section').classList.remove('hidden');
@@ -106,6 +136,71 @@ function bndebug(com) {
     console.log("disablePlataformLocal() ..... Disable plataform locally");
     console.log("======================");
   }
+}
+
+function highlightElement(el) {
+    el.classList.remove('jsHighlighted');
+    
+    void el.offsetWidth; 
+
+    el.classList.add('jsHighlighted');
+
+    el.addEventListener('animationend', () => {
+        el.classList.remove('jsHighlighted');
+    }, { once: true });
+}
+
+//=================================
+// Params
+//=================================
+const urlParams = new URLSearchParams(window.location.search);
+
+if (urlParams.get('help') == "1") {
+	setTimeout(() => {
+		gotoPage('help');
+	}, 100);
+}
+
+//=================================
+// Tooltip
+//=================================
+const tooltip = document.createElement('div');
+tooltip.id = 'tooltip-global';
+document.body.appendChild(tooltip);
+
+document.addEventListener('mouseover', (e) => {
+  const target = e.target.closest('[data-tooltip]');
+  if (!target) return;
+
+  const text = target.getAttribute('data-tooltip');
+  const rect = target.getBoundingClientRect();
+
+  tooltip.textContent = text;
+  tooltip.style.opacity = '1';
+
+  const top = rect.bottom + 6;
+  const left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2);
+
+  tooltip.style.top = top + "px";
+  tooltip.style.left = left + "px";
+});
+
+document.addEventListener('mouseout', (e) => {
+  if (e.target.closest('[data-tooltip]')) {
+    tooltip.style.opacity = '0';
+  }
+});
+
+//=================================
+// SW
+//=================================
+
+if ('serviceWorker' in navigator && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/breadnet/sw.js', { scope: '/breadnet/' })
+      .then((reg) => console.log('Service Worker registered in scope successfully:', reg.scope))
+      .catch((err) => console.error('Service Worker Error:', err));
+  });
 }
 
 //=================================
@@ -202,6 +297,39 @@ function showPromptMsgBox(type = "success", title = "Éxito!", info = "Operacion
 	});
 }
 
+function showAskBox(type = "success", title = "Titulo", info = "dummy string", buttonText = "Aceptar", buttonCancelText = "Cancelar") {
+	return new Promise((resolve) => {
+		//set content
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.title').textContent = title;
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.info').textContent = info;
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.buttons_wrapper').querySelector('.option2').textContent = buttonText;
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.buttons_wrapper').querySelector('.option1').textContent = buttonCancelText;
+
+		//show/hide buttons
+		$('msgbox-overlay').classList.add('extend');
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.inputText').classList.add('hidden');
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.buttons_wrapper').querySelector('.option2').classList.remove('hidden');
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.buttons_wrapper').querySelector('.option1').classList.remove('hidden');
+
+		//button actions
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.buttons_wrapper').querySelector('.option1').onclick = () => {
+			$('msgbox-overlay').classList.add('hide');
+			resolve({confirmed: false});
+		};
+
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('.buttons_wrapper').querySelector('.option2').onclick = () => {
+			$('msgbox-overlay').classList.add('hide');
+			resolve({confirmed: true});
+		};
+
+		//set icon
+		$('msgbox-overlay').querySelector('.msgbox-modal').querySelector('i').className = getMsgBoxIcon(type);
+
+		//show
+		$('msgbox-overlay').classList.remove('hide');
+	});
+}
+
 
 //=================================
 // Files
@@ -254,9 +382,12 @@ async function setting_changePassword() {
 	$('loadingModal').classList.add('hidden');
 
 	if (error) {
-		showMsgBox('error', 'Error', `Ocurrio un error al cambiar la contraseña: ${error.message}`, 'Cerrar');
+	showMsgBox('error', 'Error', `Ocurrio un error al cambiar la contraseña: ${error.message}`, 'Cerrar');
 	} else {
+		await supabaseClient.from('profiles').update({ password_changed: true }).eq('id', currentUser.id);
+		userProfile.password_changed = true;
 		showMsgBox('success', 'Éxito!', 'Contraseña cambiada!', 'Cerrar');
+		checkSecurityWarning();
 	}
 }
 
@@ -293,8 +424,20 @@ async function setting_changePIN() {
 		showMsgBox('error', 'Error', `Ocurrio un error al cambiar el PIN: ${error.message}`, 'Cerrar');
 	} else {
 		userProfile.pin = newPassword.value;
+		await supabaseClient.from('profiles').update({ pin_changed: true }).eq('id', currentUser.id);
+		userProfile.pin_changed = true;
 		showMsgBox('success', 'Éxito!', 'PIN cambiado!', 'Cerrar');
+		checkSecurityWarning();
 	}
+}
+
+function checkSecurityWarning() {
+  const widget = $('dashboard_widget_security');
+  if (!userProfile.password_changed || !userProfile.pin_changed) {
+    widget.classList.remove('hidden');
+  } else {
+    widget.classList.add('hidden');
+  }
 }
 
 async function resizeImageToBase64(file, size = 256, quality = 0.6) {
@@ -423,7 +566,6 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let userProfile = null;
-let loggedIn = false;
 let peopleMap = {};
 
 document.getElementById('btn-login').addEventListener('click', async () => {
@@ -476,6 +618,31 @@ document.getElementById('btn-login').addEventListener('click', async () => {
 	return;
   }
   $('login_reset_password').classList.add('hidden');
+
+  if (platformMaintenanceMode) {
+    const { data: roleCheck } = await supabaseClient.from('profiles').select('role').eq('id', data.user.id).single();
+
+    if (!roleCheck || roleCheck.role !== 'ceo') {
+        await supabaseClient.auth.signOut();
+        $('btn-login').disabled = false;
+        $('login-loading').classList.add('hidden');
+        $('page_login').style.cursor = "default";
+        showMsgBox('warn', 'Mantenimiento', 'La plataforma esta en mantenimiento, vuelve mas tarde.', 'Cerrar');
+        return;
+    } else {
+        const reactivate = await showAskBox('question', 'Modo Mantenimiento', 'La plataforma esta en mantenimiento. ¿Reactivar plataforma y salir de mantenimiento?', 'Reactivar', 'Cancelar');
+        if (reactivate.confirmed) {
+            await supabaseClient.from('platform_settings').update({ maintenance_mode: false }).eq('id', 1);
+            platformMaintenanceMode = false;
+        } else {
+            await supabaseClient.auth.signOut();
+            $('btn-login').disabled = false;
+            $('login-loading').classList.add('hidden');
+            $('page_login').style.cursor = "default";
+            return;
+        }
+      }
+  }
 
   const { data: profileCheck, error: profileCheckError } = await supabaseClient
     .from('profiles')
@@ -599,6 +766,19 @@ async function initDashboard(user) {
   userProfile = profile;
   loggedIn = true;
 
+  checkSecurityWarning();
+
+	if (!profile.password_changed || !profile.pin_changed) {
+		const gotoChangeData = await showAskBox('warn', 'Cuenta Desprotegida', 'Nunca ha cambiado su contraseña o PIN desde la creación de su cuenta. Desea cambiar esos datos ahora mismo?', 'Ir a configuración', 'Más tarde');
+    setTimeout(() => {
+      if (gotoChangeData && gotoChangeData.confirmed) {
+        gotoPage('settings');
+        highlightElement($('settingsBtn_changePass'));
+        highlightElement($('settingsBtn_changePIN'));
+      }
+    }, 100);
+	}
+
   gotoPage('home');
   document.getElementById('user-welcome').innerHTML = getAutomaticGreeting(profile.name, profile.role);
   $('header_pfp').querySelector('.name').textContent = profile.name;
@@ -625,15 +805,26 @@ async function initDashboard(user) {
 		await loadEmployeesDropdowns();
 		document.getElementById('btn-create-task').addEventListener('click', createTask);
 		$('assigneTaskBtn').classList.remove('hidden');
-		$('manageEmployeesBtn').classList.remove('hidden');
-		$('incomingRequestsBtn').classList.remove('hidden');
 		$('admin-upload-file').classList.remove('hidden');
-    $('admin-create-announcement').classList.remove('hidden');
+    	$('admin-create-announcement').classList.remove('hidden');
+
+		$('adminCategory').classList.remove('hidden');
+
+		if (profile.role === 'ceo') {
+			$('maintenanceToggleBtn').classList.remove('hidden');
+			$('directoryBtn').classList.remove('hidden');
+		}
+
+		requestNotificationPermission();
+		subscribeToIncomingRequests();
 	}
 
   loadTasks();
   subscribeToTasks();
   loadNotifications();
+  setupPresence();
+  subscribeToMaintenanceMode();
+  await supabaseClient.from('activity_log').insert([{ user_id: currentUser.id, event_type: 'login' }]);
 }
 
 async function loadPeopleMap() {
@@ -1217,8 +1408,8 @@ function renderManagedStrikesList(strikes) {
 }
 
 async function deleteStrike(strikeId) {
-  const confirmMsg = await showPromptMsgBox('question', 'Confirmar', 'Escribe "BORRAR" para eliminar este strike.', 'Eliminar', 'Cancelar');
-  if (!confirmMsg.confirmed || confirmMsg.value !== 'BORRAR') return;
+  const confirmMsg = await showAskBox('question', 'Confirmar', 'Desea borrar el archivo?', 'Eliminar', 'Cancelar');
+  if (!confirmMsg.confirmed) return;
 
   $('loadingModal').classList.remove('hidden');
   const { error } = await supabaseClient.from('strikes').delete().eq('id', strikeId);
@@ -1375,6 +1566,7 @@ $('softlockInput').onkeydown = (e) => {
 };
 function verifySoftLockPIN() {
 	if ($('softlockInput').value == userProfile.pin) {
+		isManualIdle = false;
 		deshabilitarBloqueoLeve();
 		$('softLockOverlay').classList.remove('show');
 		$('softlockInput').value = "";
@@ -1395,6 +1587,7 @@ let isPinLocked = false;
 function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
 	if (!loggedIn) return;
+	if (isManualIdle) return;
     if (isPinLocked) {
         faseBloqueoTotal();
     } else {
@@ -2207,4 +2400,516 @@ function renderSearchResults(results) {
   });
 
   container.classList.remove('hidden');
+}
+
+//=================================
+// Stats
+//=================================
+async function loadStatsPage() {
+  const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: activity, error } = await supabaseClient
+    .from('activity_log')
+    .select('user_id, event_type, page, created_at')
+    .gte('created_at', THIRTY_DAYS_AGO);
+
+  if (error) { console.error(error); return; }
+
+  const logins = activity.filter(a => a.event_type === 'login');
+  const pageViews = activity.filter(a => a.event_type === 'page_view');
+
+  $('stat-total-logins').textContent = logins.length;
+  $('stat-total-pageviews').textContent = pageViews.length;
+
+  renderTopPages(pageViews);
+  renderLoginsByUser(logins);
+  await renderSecurityStatus();
+}
+
+function renderTopPages(pageViews) {
+  const counts = {};
+  pageViews.forEach(pv => { counts[pv.page] = (counts[pv.page] || 0) + 1; });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  const container = $('stats-top-pages');
+  container.innerHTML = '';
+  if (sorted.length === 0) {
+    container.innerHTML = '<span>Sin datos todavía.</span>';
+    return;
+  }
+  sorted.forEach(([page, count]) => {
+    const div = document.createElement('div');
+    div.className = 'stats-row';
+    div.innerHTML = `<span>${page}</span><span class="stats-count">${count} vistas</span>`;
+    container.appendChild(div);
+  });
+}
+
+function renderLoginsByUser(logins) {
+  const counts = {};
+  logins.forEach(l => { counts[l.user_id] = (counts[l.user_id] || 0) + 1; });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  const container = $('stats-logins-by-user');
+  container.innerHTML = '';
+  if (sorted.length === 0) {
+    container.innerHTML = '<span>Sin datos todavía.</span>';
+    return;
+  }
+  sorted.forEach(([userId, count]) => {
+    const name = peopleMap[userId] || 'Usuario desconocido';
+    const div = document.createElement('div');
+    div.className = 'stats-row';
+    div.innerHTML = `<span>${name}</span><span class="stats-count">${count} inicios de sesión</span>`;
+    container.appendChild(div);
+  });
+}
+
+async function renderSecurityStatus() {
+  const { data: allProfiles, error } = await supabaseClient
+    .from('profiles')
+    .select('id, name, password_changed, pin_changed');
+
+  if (error) { console.error(error); return; }
+
+  const pendingCount = allProfiles.filter(p => !p.password_changed || !p.pin_changed).length;
+  $('stat-pending-security').textContent = pendingCount;
+
+  const container = $('stats-security-status');
+  container.innerHTML = '';
+
+  allProfiles.forEach(p => {
+    const isSecure = p.password_changed && p.pin_changed;
+    const div = document.createElement('div');
+    div.className = 'stats-row';
+    div.innerHTML = `
+      <span>${p.name}</span>
+      <span class="stats-security-badge ${isSecure ? 'secure' : 'insecure'}">
+        ${isSecure ? '<i class="fi fi-br-check"></i> Protegida' : `<i class="fi fi-rr-triangle-warning"></i> ${!p.password_changed ? 'Contraseña sin cambiar' : ''}${!p.password_changed && !p.pin_changed ? ' / ' : ''}${!p.pin_changed ? 'PIN sin cambiar' : ''}`}
+      </span>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function clearActivityStats() {
+  const confirmMsg = await showPromptMsgBox('warn', 'Confirmar eliminación', 'Esto borrará TODOS los registros de inicios de sesión y páginas visitadas. Los datos de contraseña/PIN protegidos NO se ven afectados. Escribe "BORRAR" para continuar.', 'Eliminar', 'Cancelar');
+  if (!confirmMsg.confirmed || confirmMsg.value !== 'BORRAR') return;
+
+  $('loadingModal').classList.remove('hidden');
+  $('loadingModal').querySelector('span').textContent = "Borrando estadísticas...";
+
+  const { error } = await supabaseClient.from('activity_log').delete().not('id', 'is', null);
+
+  $('loadingModal').classList.add('hidden');
+
+  if (error) {
+    showMsgBox('error', 'Error', `No se pudo borrar: ${error.message}`, 'Cerrar');
+    return;
+  }
+  showMsgBox('success', 'Éxito!', 'Estadísticas borradas.', 'Cerrar');
+  loadStatsPage();
+}
+
+//=================================
+// Online Users
+//=================================
+let presenceChannel = null;
+let onlineOthersCount = 0;
+
+function setupPresence() {
+	presenceChannel = supabaseClient.channel('online-users', {
+		config: { presence: { key: currentUser.id } }
+	});
+
+	presenceChannel.on('presence', { event: 'sync' }, () => {
+		const state = presenceChannel.presenceState();
+		const totalOnline = Object.keys(state).length;
+		onlineOthersCount = Math.max(0, totalOnline - 1);
+		applyOnlinePresenceToWidget();
+		if (!$('page_directory').classList.contains('hidden')) {
+			applyDirectoryFilter();
+		}
+	});
+
+	presenceChannel.subscribe(async (status) => {
+		if (status === 'SUBSCRIBED') {
+		await presenceChannel.track({ name: userProfile.name, online_at: new Date().toISOString() });
+		}
+	});
+}
+
+function applyOnlinePresenceToWidget() {
+	if ($('dashboard_widget_brief').classList.contains('status_ok')) {
+		if (onlineOthersCount > 0) {
+			$('dashboard_widget_brief').querySelector('.status').textContent =
+			`${onlineOthersCount} persona${onlineOthersCount === 1 ? '' : 's'} está${onlineOthersCount === 1 ? '' : 'n'} en línea!`;
+		} else {
+			$('dashboard_widget_brief').querySelector('.status').textContent = "Todo correcto por aqui!";
+		}
+	}
+}
+
+//=================================
+// Mantenince
+//=================================
+let platformMaintenanceMode = false;
+let secretClickCount = 0;
+let secretClickTimer = null;
+
+async function checkMaintenanceMode() {
+  const { data, error } = await supabaseClient.from('platform_settings').select('maintenance_mode').eq('id', 1).single();
+  if (error) { console.error(error); return; }
+  platformMaintenanceMode = data.maintenance_mode;
+  applyMaintenanceScreenState();
+}
+checkMaintenanceMode();
+
+function applyMaintenanceScreenState() {
+  if (platformMaintenanceMode) {
+    $('notAvailable').classList.add('hidden');
+    $('login-section').classList.add('hidden');
+    $('maintenanceScreen').classList.remove('hidden');
+  } else {
+    $('maintenanceScreen').classList.add('hidden');
+    //const plataformActivated = localStorage.getItem('localTestingBN_activated');
+    if (plataformActivated === 'true') {
+      $('notAvailable').classList.add('hidden');
+      $('login-section').classList.remove('hidden');
+    } else {
+      $('notAvailable').classList.remove('hidden');
+      $('login-section').classList.add('hidden');
+    }
+  }
+}
+
+function secretMaintenanceClick() {
+  secretClickCount++;
+  clearTimeout(secretClickTimer);
+  secretClickTimer = setTimeout(() => { secretClickCount = 0; }, 2000);
+  if (secretClickCount >= 5) {
+    secretClickCount = 0;
+    $('maintenanceScreen').classList.add('hidden');
+    $('notAvailable').classList.add('hidden');
+    $('login-section').classList.remove('hidden');
+  }
+}
+
+async function toggleMaintenanceMode() {
+  const confirmMsg = await showAskBox(
+    'warn',
+    'Modo Mantenimiento',
+    platformMaintenanceMode
+      ? '¿Desactivar el modo mantenimiento?'
+      : '¿Activar el modo mantenimiento? Todos los usuarios conectados tendrán 1 minuto para finalizar su trabajo antes de ser desconectados.',
+    'Confirmar', 'Cancelar'
+  );
+  if (!confirmMsg.confirmed) return;
+
+  const newState = !platformMaintenanceMode;
+  const { error } = await supabaseClient
+    .from('platform_settings')
+    .update({ maintenance_mode: newState, maintenance_initiated_at: newState ? new Date().toISOString() : null })
+    .eq('id', 1);
+
+  if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+  showMsgBox('success', 'Éxito!', `Modo mantenimiento ${newState ? 'activado' : 'desactivado'}.`, 'Cerrar');
+}
+
+function subscribeToMaintenanceMode() {
+  supabaseClient.channel('maintenance-mode')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'platform_settings' }, (payload) => {
+      if (payload.new.maintenance_mode === true && loggedIn) {
+        showMaintenanceCountdown();
+      }
+    })
+    .subscribe();
+}
+
+function showMaintenanceCountdown() {
+  if ($('maintenanceWarningOverlay').classList.contains('show')) return;
+  $('maintenanceWarningOverlay').classList.add('show');
+  let secondsLeft = 60;
+  $('maintenanceCountdownNum').textContent = secondsLeft;
+  const interval = setInterval(() => {
+    secondsLeft--;
+    $('maintenanceCountdownNum').textContent = secondsLeft;
+    if (secondsLeft <= 0) {
+      clearInterval(interval);
+      forceMaintenanceLogout();
+    }
+  }, 1000);
+}
+
+async function forceMaintenanceLogout() {
+  await supabaseClient.auth.signOut();
+  loggedIn = false;
+  window.location.reload();
+}
+
+//=================================
+// Feedback
+//=================================
+async function sendFeedback() {
+  const type = $('feedback-type').value;
+  const message = $('feedback-message').value.trim();
+  if (!message) { showMsgBox('error', 'Error', 'Escribe un mensaje antes de enviar.', 'Cerrar'); return; }
+
+  $('loadingModal').classList.remove('hidden');
+  const { data, error } = await supabaseClient.from('feedback').insert([{ user_id: currentUser.id, type, message }]).select();
+  $('loadingModal').classList.add('hidden');
+
+  if (error || !data || data.length === 0) {
+    showMsgBox('error', 'Error', `No se pudo enviar: ${error ? error.message : 'permiso denegado'}`, 'Cerrar');
+    return;
+  }
+  $('feedback-message').value = '';
+  showMsgBox('success', 'Éxito!', 'Gracias por tu feedback!', 'Cerrar');
+}
+
+async function loadFeedbackList() {
+  if (!['admin', 'ceo'].includes(userProfile.role)) return;
+
+  const { data: items, error } = await supabaseClient.from('feedback').select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+
+  $('admin-feedback-list').classList.remove('hidden');
+  const container = $('feedback-list-container');
+  container.innerHTML = '';
+  if (!items || items.length === 0) { container.innerHTML = '<span>No hay feedback todavía.</span>'; return; }
+
+  const typeLabels = { idea: 'Sugerencia', bug: 'Bug', general: 'Comentario' };
+  items.forEach(f => {
+    const name = peopleMap[f.user_id] || 'Usuario';
+    const div = document.createElement('div');
+    div.className = 'element';
+    div.innerHTML = `
+      <div class="top_wrapper">
+        <span class="title">${typeLabels[f.type] || f.type} - ${name}</span>
+      </div>
+      <p>${f.message}</p>
+    `;
+    container.appendChild(div);
+  });
+}
+
+//=================================
+// Realtime requests
+//=================================
+function subscribeToIncomingRequests() {
+  if (!['admin', 'ceo'].includes(userProfile.role)) return;
+
+  supabaseClient.channel('realtime:incoming-requests')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests', filter: `admin_id=eq.${currentUser.id}` }, (payload) => {
+      playNotificationSound();
+      sendBrowserNotification('Nueva Solicitud', `${peopleMap[payload.new.employee_id] || 'Un empleado'} envió una solicitud: ${payload.new.type}`);
+      loadNotifications();
+      if (!$('page_incomingrequests').classList.contains('hidden')) {
+        loadIncomingRequests();
+      }
+    })
+    .subscribe();
+}
+
+function playNotificationSound() {
+  try {
+    const audio = new Audio('/assets/notification.mp3');
+    audio.play().catch(() => {});
+  } catch (e) {}
+}
+
+async function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+}
+
+function sendBrowserNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/assets/breadnet_small.webp' });
+  }
+}
+
+//=================================
+// Lock App (idle)
+//=================================
+let isManualIdle = false;
+
+function manualIdleLock() {
+  isManualIdle = true;
+  clearTimeout(inactivityTimer);
+  isPinLocked = true;
+  $('softLockOverlay').classList.add('show');
+  $('softLockAlertOverlay').classList.remove('show');
+}
+
+//=================================
+// Employee Directory
+//=================================
+let directoryFullData = [];
+let directoryMode = 'normal'; // 'normal' o 'advanced'
+
+const DIRECTORY_NORMAL_COLUMNS = [
+  { key: 'online', label: 'Estado' },
+  { key: 'name', label: 'Nombre' },
+  { key: 'username', label: 'Usuario' },
+  { key: 'email', label: 'Correo' },
+  { key: 'role', label: 'Rol' },
+  { key: 'eid', label: 'EID' },
+  { key: 'phone_number', label: 'Teléfono' },
+  { key: 'birth_date', label: 'Nacimiento' }
+];
+
+const DIRECTORY_ADVANCED_COLUMNS = [
+  ...DIRECTORY_NORMAL_COLUMNS,
+  { key: 'id', label: 'UID (Supabase)' },
+  { key: 'created_at', label: 'Creado' },
+  { key: 'is_banned', label: 'Baneado' },
+  { key: 'ban_reason', label: 'Razón Baneo' },
+  { key: 'ban_expires_at', label: 'Baneo Expira' },
+  { key: 'password_changed', label: 'Contraseña Cambiada' },
+  { key: 'pin_changed', label: 'PIN Cambiado' },
+  { key: 'photo_url', label: 'Foto de Perfil' }
+];
+
+async function loadDirectory() {
+  if (userProfile.role !== 'ceo') return;
+
+  $('loadingModal').classList.remove('hidden');
+  $('loadingModal').querySelector('span').textContent = "Cargando directorio...";
+
+  const { data: profilesData, error: profilesError } = await supabaseClient.from('profiles').select('*');
+  const { data: emailsData, error: emailsError } = await supabaseClient.rpc('get_all_emails');
+
+  $('loadingModal').classList.add('hidden');
+
+  if (profilesError || emailsError) {
+    showMsgBox('error', 'Error', `No se pudo cargar el directorio: ${profilesError ? profilesError.message : emailsError.message}`, 'Cerrar');
+    return;
+  }
+
+  const emailMap = {};
+  (emailsData || []).forEach(e => { emailMap[e.id] = e.email; });
+
+  directoryFullData = profilesData
+    .filter(p => p.role !== 'ceo') 
+    .map(p => ({ ...p, email: emailMap[p.id] || '—' }));
+
+  renderDirectoryTable(directoryFullData);
+}
+
+function toggleDirectoryMode() {
+  directoryMode = $('directory-mode-toggle').checked ? 'advanced' : 'normal';
+  $('directory-mode-label').textContent = directoryMode === 'advanced' ? 'Avanzada' : 'Normal';
+  applyDirectoryFilter();
+}
+
+function applyDirectoryFilter() {
+  const query = $('directory-search-input').value.trim().toLowerCase();
+  if (!query) {
+    renderDirectoryTable(directoryFullData);
+    return;
+  }
+  const filtered = directoryFullData.filter(p => {
+    return [p.name, p.username, p.email, p.id, p.eid, p.phone_number, p.role]
+      .some(field => field && field.toString().toLowerCase().includes(query));
+  });
+  renderDirectoryTable(filtered);
+}
+
+$('directory-search-input')?.addEventListener('input', applyDirectoryFilter);
+
+function isUserOnline(userId) {
+  if (!presenceChannel) return false;
+  const state = presenceChannel.presenceState();
+  return Object.prototype.hasOwnProperty.call(state, userId);
+}
+
+function formatDirectoryValue(key, value, row) {
+  if (key === 'online') {
+    return isUserOnline(row.id)
+      ? `<span class="directory-online-badge online"><i class="fi fi-br-check"></i> En línea</span>`
+      : `<span class="directory-online-badge offline">Desconectado</span>`;
+  }
+  if (key === 'photo_url') {
+    return value ? `<img src="${value}" class="directory-thumb">` : '—';
+  }
+  if (key === 'is_banned') {
+    return value ? `<span class="directory-badge danger">Sí</span>` : `<span class="directory-badge ok">No</span>`;
+  }
+  if (key === 'password_changed' || key === 'pin_changed') {
+    return value ? `<span class="directory-badge ok">Sí</span>` : `<span class="directory-badge danger">No</span>`;
+  }
+  if (key === 'created_at' || key === 'ban_expires_at') {
+    return value ? new Date(value).toLocaleString() : '—';
+  }
+  if (key === 'birth_date') {
+    return value ? new Date(value).toLocaleDateString() : '—';
+  }
+  return (value === null || value === undefined || value === '') ? '—' : value;
+}
+
+function renderDirectoryTable(rows) {
+  const columns = directoryMode === 'advanced' ? DIRECTORY_ADVANCED_COLUMNS : DIRECTORY_NORMAL_COLUMNS;
+
+  const thead = $('directory-table-head');
+  thead.innerHTML = `<tr>${columns.map(c => `<th>${c.label}</th>`).join('')}<th>Acción</th></tr>`;
+
+  const tbody = $('directory-table-body');
+  tbody.innerHTML = '';
+
+  $('directory-count').textContent = `${rows.length} cuenta${rows.length === 1 ? '' : 's'} encontrada${rows.length === 1 ? '' : 's'}`;
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${columns.length + 1}">Sin resultados.</td></tr>`;
+    return;
+  }
+
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = columns.map(c => `<td>${formatDirectoryValue(c.key, row[c.key], row)}</td>`).join('')
+      + `<td><button class="btnsmall" onclick="goToManageFromDirectory('${row.id}')"><i class="fi fi-rr-user-gear"></i></button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function goToManageFromDirectory(userId) {
+  gotoPage('manageemployees');
+  setTimeout(() => {
+    $('manage-employee-select').value = userId;
+    loadEmployeeManagement();
+  }, 50);
+}
+
+function exportDirectoryCsv() {
+  const columns = directoryMode === 'advanced' ? DIRECTORY_ADVANCED_COLUMNS : DIRECTORY_NORMAL_COLUMNS;
+  const query = $('directory-search-input').value.trim().toLowerCase();
+  const rows = query
+    ? directoryFullData.filter(p => [p.name, p.username, p.email, p.id, p.eid, p.phone_number, p.role].some(f => f && f.toString().toLowerCase().includes(query)))
+    : directoryFullData;
+
+  const header = columns.filter(c => c.key !== 'online' && c.key !== 'photo_url').map(c => c.label);
+  const csvRows = [header.join(',')];
+
+  rows.forEach(row => {
+    const line = columns
+      .filter(c => c.key !== 'online' && c.key !== 'photo_url')
+      .map(c => {
+        let val = row[c.key];
+        if (val === null || val === undefined) val = '';
+        val = val.toString().replace(/"/g, '""');
+        return `"${val}"`;
+      });
+    csvRows.push(line.join(','));
+  });
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `breadnet-directorio-${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }

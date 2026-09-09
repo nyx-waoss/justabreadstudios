@@ -16,6 +16,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://justabreadstudios.netlify.app/breadnet/">
     
+	<link rel="manifest" href="/breadnet/manifest.json">
     <link rel="icon" type="image/x-icon" href="/assets/breadnet_small.webp">
 
     <link rel="stylesheet" href="styles.css">
@@ -47,25 +48,58 @@
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
 </head>
 <body>
-  <nav id="sidebar" class="hidden">
-    <button onclick="gotoPage('home')"> <i class="fi fi-rr-house-chimney"></i> <span class="text">Inicio</span> </button>
-	<button onclick="gotoPage('tasks')"> <i class="fi fi-rr-task-checklist"></i> <span class="text">Tareas</span> </button>
-	<button onclick="gotoPage('files')"> <i class="fi fi-rr-folder-open"></i> <span class="text">Archivos</span> </button>
-	<button onclick="gotoPage('projects')"> <i class="fi fi-rr-workflow-alt"></i> <span class="text">Proyectos</span> </button>
-	<button onclick="gotoPage('requests')"> <i class="fi fi-rr-envelope"></i> <span class="text">Solicitudes</span> </button>
-	<button onclick="gotoPage('news')"> <i class="fi fi-rr-resources"></i> <span class="text">Novedades</span> </button>
-	<button onclick="gotoPage('strikes')"> <i class="fi fi-rr-portrait"></i> <span class="text">Strikes y Estado</span> </button>
-	<button onclick="gotoPage('manageemployees')" id="manageEmployeesBtn" class="hidden"> <i class="fi fi-rr-user-gear"></i> <span class="text">Gestionar Empleados</span> </button>
-	<button onclick="gotoPage('incomingrequests')" id="incomingRequestsBtn" class="hidden"> <i class="fi fi-rr-inbox"></i> <span class="text">Solicitudes Recibidas</span> </button>
+	<nav id="sidebar" class="hidden">
+		<button onclick="gotoPage('home')"> <i class="fi fi-rr-house-chimney"></i> <span class="text">Inicio</span> </button>
+		<button onclick="gotoPage('tasks')"> <i class="fi fi-rr-task-checklist"></i> <span class="text">Tareas</span> </button>
+		<button onclick="gotoPage('files')"> <i class="fi fi-rr-folder-open"></i> <span class="text">Archivos</span> </button>
 
-	<div class="bottom">
-		<button onclick="gotoPage('settings')"> <i class="fi fi-rr-settings"></i> <span class="text">Configuración</span> </button>
-	</div>
-  </nav>
+		<div class="sidebar-category" id="accountCategory">
+			<button onclick="toggleSidebarCategory('accountCategory')" class="category-toggle">
+				<i class="fi fi-rr-portrait"></i> <span class="text">Cuenta</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
+			</button>
+			<div class="category-submenu">
+				<button onclick="gotoPage('strikes')"> <i class="fi fi-rr-portrait"></i> <span class="text">Strikes y Estado</span> </button>
+				<button onclick="gotoPage('requests')"> <i class="fi fi-rr-envelope"></i> <span class="text">Solicitudes</span> </button>
+			</div>
+		</div>
+
+		<div class="sidebar-category" id="communityCategory">
+			<button onclick="toggleSidebarCategory('communityCategory')" class="category-toggle">
+				<i class="fi fi-rr-network-user"></i> <span class="text">Comunidad</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
+			</button>
+			<div class="category-submenu">
+				<button onclick="gotoPage('news')"> <i class="fi fi-rr-resources"></i> <span class="text">Novedades</span> </button>
+				<button onclick="gotoPage('projects')"> <i class="fi fi-rr-workflow-alt"></i> <span class="text">Proyectos</span> </button>
+				<button onclick="gotoPage('feedback')"> <i class="fi fi-rr-comment-alt"></i> <span class="text">Feedback</span> </button>
+			</div>
+		</div>
+
+		<div class="sidebar-category hidden" id="adminCategory">
+			<button onclick="toggleSidebarCategory('adminCategory')" class="category-toggle">
+				<i class="fi fi-rr-shield"></i> <span class="text">Administración</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
+			</button>
+			<div class="category-submenu">
+				<button onclick="gotoPage('manageemployees')"> <i class="fi fi-rr-user-gear"></i> <span class="text">Gestionar Empleados</span> </button>
+				<button onclick="gotoPage('stats')"> <i class="fi fi-rr-stats"></i> <span class="text">Estadísticas</span> </button>
+				<button onclick="gotoPage('incomingrequests')"> <i class="fi fi-rr-inbox"></i> <span class="text">Solicitudes Recibidas</span> </button>
+				<button onclick="gotoPage('directory')" id="directoryBtn" class="hidden"> <i class="fi fi-rr-address-book"></i> <span class="text">Directorio de Empleados</span> </button>
+				<button onclick="toggleMaintenanceMode()" id="maintenanceToggleBtn" class="hidden"> <i class="fi fi-rr-tools"></i> <span class="text">Modo Mantenimiento</span> </button>
+			</div>
+		</div>
+
+
+		<div class="bottom">
+			<button onclick="gotoPage('settings')"> <i class="fi fi-rr-settings"></i> <span class="text">Configuración</span> </button>
+		</div>
+	</nav>
+
   <header id="header" class="hidden">
 	<button class="mobileNavBtn" onclick="showMobileSidebar()"><i class="fi fi-br-menu-burger"></i></button>
-	<button class="pfp" id="header_pfp" onclick="gotoPage('settings')">
-		<img alt="Account Photo" src="/assets/userdefault.jpg" id="headerPFPimg">
+	<button class="pfp" id="header_pfp" onclick="gotoPage('settings')" data-tooltip="Mi Cuenta">
+		<div class="pfp-img-wrapper">
+			<img alt="Account Photo" src="/assets/userdefault.jpg" id="headerPFPimg">
+			<span class="online-dot"></span>
+		</div>
 		<span class="name">Usuario</span>
 	</button>
 
@@ -77,11 +111,14 @@
 
 	<div class="leftside">
 		<span class="time">00:00 AM</span>
-		<button onclick="toggleNotificationsDialog()" class="notifBtn">
+		<button onclick="document.getElementById('header').classList.toggle('displaySearch')" class="closeTouchSearchBtn"><i class="fi fi-br-cross"></i></i></button>
+		<button onclick="document.getElementById('header').classList.toggle('displaySearch')" class="touchSearchBtn"><i class="fi fi-rr-search"></i></button>
+		<button onclick="manualIdleLock()" data-tooltip="Bloquear Plataforma (idle)"><i class="fi fi-rr-lock"></i></button>
+		<button onclick="toggleNotificationsDialog()" class="notifBtn" data-tooltip="Notificaciones">
 			<i class="fi fi-rr-bell-notification-social-media"></i>
 			<span id="notifications-badge" class="hidden">0</span>
 		</button>
-		<button onclick="document.getElementById('logoutDialog').classList.toggle('show')"><i class="fi fi-rr-exit"></i></button>
+		<button onclick="document.getElementById('logoutDialog').classList.toggle('show')" data-tooltip="Cerrar Sesión"><i class="fi fi-rr-exit"></i></button>
 	</div>
   </header>
   <div id="logoutDialog">
@@ -129,6 +166,13 @@
 		</div>
 	</div>
   </div>
+  	<div id="maintenanceWarningOverlay">
+		<div class="maintenanceWarningBox">
+			<i class="fi fi-rr-tools"></i>
+			<span><strong>Mantenimiento Programado</strong><br>La plataforma entrará en mantenimiento en <span id="maintenanceCountdownNum">60</span> segundos. Finaliza tu trabajo actual.</span>
+			<button onclick="document.getElementById('maintenanceWarningOverlay').classList.remove('show')">Entendido</button>
+		</div>
+	</div>
 
   <div id="filePreview" class="hidden">
 	<button><i class="fi fi-br-cross"></i></button>
@@ -143,10 +187,15 @@
   </div>
 
   <section class="page hidden" id="page_login">
+	<div id="maintenanceScreen" class="hidden">
+		<img alt="BreadNet Logo" src="/assets/breadnet_d.png" class="logo" onclick="secretMaintenanceClick()">
+		<h1>Mantenimiento en curso</h1>
+		<span>BreadNet se encuentra actualmente en mantenimiento. Por favor, vuelve más tarde.</span>
+	</div>
 	<div id="notAvailable">
 		<img alt="BreadNet Logo" src="/assets/breadnet_d.png" class="logo">
 		<h1>Bienvenido</h1>
-		<span>BreadNet&trade; no esta disponible todavía :( Vuelve pronto!</span>
+		<span>BreadNet&trade; se lanzara oficialmente este viernes! Por el momento, la plataforma esta deshabilitada. Vuelve el viernes y explora BreadNet!</span>
 	</div>
 	<div id="login-section" class="hidden">
 		<img alt="BreadNet Logo" src="/assets/breadnet_d.png" class="logo">
@@ -169,6 +218,14 @@
 			<h1 id="user-welcome">Bienvenido!</h1>
 		</header>
 		<div class="widgets">
+			<div class="widget status_danger hidden" id="dashboard_widget_security">
+				<div class="header">
+					<i class="fi fi-rr-shield-exclamation"></i>
+					<span class="title">Cuenta Desprotegida</span>
+				</div>
+				<span class="status">Los datos personales y privados de su cuenta estan en riesgo! Por favor, cambie su contraseña y PIN</span>
+				<button onclick="gotoPage('settings'); highlightElement($('settingsBtn_changePass')); highlightElement($('settingsBtn_changePIN'));">Ir a Configuración</button>
+			</div>
 			<div class="widget status_ok" id="dashboard_widget_brief">
 				<div class="header">
 					<i class="fi fi-rr-check"></i>
@@ -378,6 +435,36 @@
 	</div>
   </section>
 
+  <section class="page hidden" id="page_stats">
+		<h3>Estadísticas</h3>
+
+		<button onclick="clearActivityStats()" class="danger-btn"><i class="fi fi-rr-trash"></i> Borrar datos de estadísticas</button>
+
+		<div class="stats-grid">
+			<div class="stat-card">
+				<span class="stat-number" id="stat-total-logins">0</span>
+				<span class="stat-label">Inicios de sesión (30 días)</span>
+			</div>
+			<div class="stat-card">
+				<span class="stat-number" id="stat-total-pageviews">0</span>
+				<span class="stat-label">Páginas vistas (30 días)</span>
+			</div>
+			<div class="stat-card">
+				<span class="stat-number" id="stat-pending-security">0</span>
+				<span class="stat-label">Cuentas sin proteger</span>
+			</div>
+		</div>
+
+		<h4>Páginas más visitadas</h4>
+		<div id="stats-top-pages"></div>
+
+		<h4>Inicios de sesión por usuario</h4>
+		<div id="stats-logins-by-user"></div>
+
+		<h4>Estado de seguridad por usuario</h4>
+		<div id="stats-security-status"></div>
+	</section>
+
   <section class="page hidden" id="page_settings">
 	<h3>Configuración</h3>
 	<h4>Cuenta</h4>
@@ -387,8 +474,8 @@
 		<button onclick="setting_changePFP()"><i class="fi fi-rr-picture"></i> Cambiar foto de perfil</button>
 	</div>
 	<div class="row">
-		<button onclick="setting_changePassword()"><i class="fi fi-rr-key"></i> Cambiar Contraseña</button>
-		<button onclick="setting_changePIN()"><i class="fi fi-rr-password-lock"></i> Cambiar PIN</button>
+		<button onclick="setting_changePassword()" id="settingsBtn_changePass"><i class="fi fi-rr-key"></i> Cambiar Contraseña</button>
+		<button onclick="setting_changePIN()"      id="settingsBtn_changePIN"><i class="fi fi-rr-password-lock"></i> Cambiar PIN</button>
 	</div>
 	<div class="row">
 		<span id="settings_userExtraInfo">Usuario</span>
@@ -406,7 +493,143 @@
 	</div>
   </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+ 	<section class="page hidden" id="page_feedback">
+		<h3>Feedback</h3>
+		<div class="wrapper">
+			<span>Tipo:</span>
+			<select id="feedback-type">
+				<option value="idea">Sugerencia / Idea</option>
+				<option value="bug">Reporte de Bug</option>
+				<option value="general">Comentario General</option>
+			</select>
+			<textarea id="feedback-message" placeholder="Escribe tu feedback aquí..."></textarea>
+			<button onclick="sendFeedback()"><i class="fi fi-rr-paper-plane"></i> Enviar Feedback</button>
+		</div>
+
+		<div id="admin-feedback-list" class="hidden">
+			<h4>Feedback recibido</h4>
+			<div id="feedback-list-container"></div>
+		</div>
+	</section>
+
+
+	<section class="page hidden" id="page_directory">
+		<h3>Directorio de Empleados</h3>
+
+		<div class="directory-toolbar">
+			<div class="directory-search">
+				<i class="fi fi-rr-search"></i>
+				<input type="text" id="directory-search-input" placeholder="Buscar por nombre, usuario, correo, ID, EID...">
+			</div>
+
+			<label class="directory-toggle">
+				<span>Vista:</span>
+				<input type="checkbox" id="directory-mode-toggle" onchange="toggleDirectoryMode()">
+				<span class="directory-toggle-label" id="directory-mode-label">Normal</span>
+			</label>
+
+			<button onclick="exportDirectoryCsv()"><i class="fi fi-rr-file-export"></i> Exportar CSV</button>
+		</div>
+
+		<div id="directory-count"></div>
+
+		<div class="directory-table-wrapper">
+			<table id="directory-table">
+				<thead id="directory-table-head"></thead>
+				<tbody id="directory-table-body"></tbody>
+			</table>
+		</div>
+	</section>
+
+
+
+
+
+
+
+
+	<section class="page hidden" id="page_help">
+		<h3>Ayuda</h3>
+		<h4><i class="fi fi-sr-key"></i> Accesos, Sesión y Seguridad</h4>
+		<details>
+			<summary>¿Qué hago si olvidé mi contraseña o mi PIN de 4 dígitos?</summary>
+			<p>Por motivos de seguridad, no podemos ver tu contraseña ni tu PIN. En la pantalla de inicio de sesión puedes restablecer tu contraseña mediante tu correo. Si tambien perdiste tu correo, contacta con algun administrador para que te ayude a recuperar tu cuenta.</p>
+		</details>
+		<details>
+			<summary>¿Por qué mi sesión se cierra sola automáticamente?</summary>
+			<p>Para proteger tus datos en caso de inactividad. Puedes ajustar el tiempo en la seccion de <i class="fi fi-sr-settings"></i> Configuración > Tiempo de Inactividad</p>
+		</details>
+		<details>
+			<summary>¿Pueden los administradores ver mis contraseñas o archivos privados?</summary>
+			<p>No, toda tu informacion personal es completamente privada y cifrada. Los administradores solo pueden ver tu nombre, foto de perfil, correo, rol, solicitudes, y tareas. Pero no podemos ver PINs, contraseñas, ni archivos privados.</p>
+		</details>
+
+
+		<h4><i class="fi fi-sr-briefcase"></i> Tareas y Entrega de Archivos</h4>
+		<details>
+			<summary>¿Cómo entrego un trabajo o avance de tarea?</summary>
+			<p>Ve a la sección Tareas, busca la tarea asignada, haz clic en "Subir archivo / Entregar", adjunta el documento o imagen correspondiente y confirma la entrega. El estado cambiará automáticamente a revisión.</p>
+		</details>
+		<details>
+			<summary>¿Qué tamaño máximo o formatos de archivo puedo subir?</summary>
+			<p>Se aceptan imágenes (.png, .jpg), documentos (.pdf) y archivos comprimidos (.zip, .rar). Procura que no superen los 50 MB. Si necesitas subir un asset más pesado, usa la sección de Archivos.</p>
+		</details>
+		<details>
+			<summary>¿Qué hago si me equivoqué de archivo al entregar una tarea?</summary>
+			<p>Puedes volver a subir el archivo correcto antes de que el Administrador marque la tarea como completada. El nuevo archivo reemplazará al anterior.</p>
+		</details>
+
+
+
+		<h4><i class="fi fi-sr-triangle-warning"></i> Sistema de Strikes y Estado de Cuenta</h4>
+		<details>
+			<summary>¿Qué es un Strike y por qué podría recibir uno?</summary>
+			<p>Un strike es una advertencia registrada en tu expediente por faltas como incumplimiento grave de fechas límite, falta de comunicación prolongada o violaciones a los términos de la empresa.</p>
+		</details>
+		<details>
+			<summary>¿Qué pasa si acumulo 3 Strikes?</summary>
+			<p>El sistema bloqueará temporalmente tu acceso y tu cuenta pasará a revisión por parte de la administración para evaluar una suspensión o ban definitivo.</p>
+		</details>
+		<details>
+			<summary>¿Cómo puedo remover un Strike de mi expediente?</summary>
+			<p>Los strikes son revisados periódicamente por los administradores. Mantener un desempeño constante, cumplir con tus entregas a tiempo y aportar al equipo ayudará a que la administración evalúe retirar infracciones pasadas.</p>
+		</details>
+
+
+
+		<h4><i class="fi fi-sr-envelope"></i> Solicitudes y Cambios</h4>
+		<details>
+			<summary>¿Cuánto tarda en aprobarse una solicitud de cambio de proyecto o área?</summary>
+			<p>Las solicitudes son revisadas directamente por los Administradores o el CEO. El tiempo promedio de respuesta es de 24 a 48 horas laborables.</p>
+		</details>
+		<details>
+			<summary>¿Qué sucede si envío una solicitud de Renuncia?</summary>
+			<p>Esta acción enviará una notificación a la administración para procesar tu salida formal y eliminar el acceso de tu cuenta a los servidores y recursos de la empresa de forma segura.</p>
+		</details>
+
+
+
+		<h4><i class="fi fi-sr-wrench-alt"></i> Problemas Técnicos Comunes</h4>
+		<details>
+			<summary>No puedo previsualizar un archivo PDF o imagen en la sección de Archivos:</summary>
+			<p>Intenta refrescar la página. Si el problema persiste, verifica tu conexión a internet o presiona el botón de "Descargar" para abrir el archivo directamente en tu dispositivo.</p>
+		</details>
+		<details>
+			<summary>La plataforma se queda cargando o no muestra mis datos:</summary>
+			<p>Borra la caché de tu navegador o prueba abrir BreadNet en una ventana de incógnito. Si el problema continúa, puede tratarse de un mantenimiento temporal en el servidor.</p>
+		</details>
+
+
+		<h4><i class="fi fi-sr-interrogation"></i> ¿No encontraste lo que buscabas?</h4>
+		<span>Si necesitas mas ayuda, puedes contactar con un administrador de Just A Bread Studios.</span>
+	</section>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="app.js"></script>
 </body>
 </html>
+
+<!--
+
+ü, é, á, í, ó, ú, ñ, Ñ, ¿, ¡
+
+-->

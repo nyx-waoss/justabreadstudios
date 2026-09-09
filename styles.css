@@ -137,9 +137,16 @@ nav .mobileNav i {
     width: 28px;
     height: 28px;
 }
-@media (max-width: 800px) {
+@media (max-width: 840px) {
     nav .mobileNav {
         display: flex;
+        margin-left: auto !important;
+    }
+}
+@media (max-width: 1100px) {
+    nav .mobileNav {
+        display: flex;
+        margin-left: 0;
     }
 }
 
@@ -218,9 +225,32 @@ nav.scrolled img {
     backdrop-filter: none;
     padding: 0;
 }
-@media (max-width: 800px) {
+@media (min-width: 1100px) {
+    #navTouchSidebar {
+        width: 400px;
+    }
+}
+@media (max-width: 1100px) {
+    #navTouchSidebar {
+        width: 60%;
+    }
+}
+@media (max-width: 1000px) {
+    #navTouchSidebar {
+        width: 70%;
+    }
+}
+@media (max-width: 840px) {
     nav ul {
         display: none;
+    }
+    #navTouchSidebar {
+        width: 80%;
+    }
+}
+@media (max-width: 600px) {
+    #navTouchSidebar {
+        width: 90%;
     }
 }
 #navbar ul {
