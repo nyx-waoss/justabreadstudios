@@ -129,6 +129,24 @@ button:disabled:hover {
     }
 }
 
+.skeletonObj {
+    content: "";
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    transition: background-color 0.8s ease;
+}
+.skeletonObj.focus {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+.skeletonObj.noAnimation {
+    background: #000000;
+    background: linear-gradient(100deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.1) 67%, rgba(0, 0, 0, 0.2) 100%);
+}
+.skeletonObj.skeleton_TextLine {
+    height: 18px;
+    width: 80px;
+}
+
 #sidebar {
     position: fixed;
     top: 0;
@@ -651,11 +669,16 @@ body.apple_device .headerSearch {
     flex-shrink: 0;
     background-color: rgba(255, 255, 255, 0.2);
     border: none;
+    margin: 0 !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .notification-item button.btnsmall i {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
 }
 
 #loadingModal {
@@ -1084,7 +1107,8 @@ body.apple_device #logoutDialog {
     position: fixed;
     top: 70px;
     left: calc(100% - 384px);
-    height: 150px;
+    height: auto;
+    max-height: 440px;
     width: 320px;
     z-index: 15;
 
@@ -1106,6 +1130,7 @@ body.apple_device #logoutDialog {
     pointer-events: none;
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
+
 #notificationsDialog.show {
     transform: translateY(0);
     opacity: 1;

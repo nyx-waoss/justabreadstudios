@@ -3078,23 +3078,37 @@ async function saveEmployeeIdentification() {
 }
 
 async function loadMyIdentification() {
-  const { data, error } = await supabaseClient
-    .from('employee_identification')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .maybeSingle();
+	$('idData-number').className      = "skeletonObj skeleton_TextLine noAnimation";
+	$('idData-unique').className      = "skeletonObj skeleton_TextLine noAnimation";
+	$('idData-registered').className  = "skeletonObj skeleton_TextLine noAnimation";
+	$('idData-valid').className       = "skeletonObj skeleton_TextLine noAnimation";
+	$('idData-requests').className    = "skeletonObj skeleton_TextLine noAnimation";
+	$('idData-lost').className        = "skeletonObj skeleton_TextLine noAnimation";
 
-  if (error) { console.error(error); return; }
+	const { data, error } = await supabaseClient
+		.from('employee_identification')
+		.select('*')
+		.eq('user_id', currentUser.id)
+		.maybeSingle();
 
-  $('idData-number').textContent = data?.id_number || 'No asignado';
-  $('idData-unique').textContent = data?.unique_id_number || 'No asignado';
-  $('idData-registered').textContent = data?.registered_at ? new Date(data.registered_at).toLocaleDateString() : 'No asignado';
-  $('idData-valid').textContent = data ? (data.is_valid ? 'Sí' : 'No') : 'No asignado';
-  $('idData-requests').textContent = data?.requests_count ?? 0;
-  $('idData-lost').textContent = data?.lost_count ?? 0;
+	if (error) { console.error(error); return; }
 
-  if (data?.photo_front_url) $('pageIdentificationIDP_front').src = data.photo_front_url;
-  if (data?.photo_back_url) $('pageIdentificationIDP_back').src = data.photo_back_url;
+	$('idData-number').textContent = data?.id_number || 'No asignado';
+	$('idData-unique').textContent = data?.unique_id_number || 'No asignado';
+	$('idData-registered').textContent = data?.registered_at ? new Date(data.registered_at).toLocaleDateString() : 'No asignado';
+	$('idData-valid').textContent = data ? (data.is_valid ? 'Sí' : 'No') : 'No asignado';
+	$('idData-requests').textContent = data?.requests_count ?? 0;
+	$('idData-lost').textContent = data?.lost_count ?? 0;
+
+	$('idData-number').className      = "";
+	$('idData-unique').className      = "";
+	$('idData-registered').className  = "";
+	$('idData-valid').className       = "";
+	$('idData-requests').className    = "";
+	$('idData-lost').className        = "";
+
+	if (data?.photo_front_url) $('pageIdentificationIDP_front').src = data.photo_front_url;
+  	if (data?.photo_back_url) $('pageIdentificationIDP_back').src = data.photo_back_url;
 }
 
 //=================================

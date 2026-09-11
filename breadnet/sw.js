@@ -1,8 +1,8 @@
-const CACHE_NAME = 'breadnet-v3';
-const DYNAMIC_CACHE = 'breadnet-dynamic-v3';
+//sw.js
+const CACHE_NAME = 'breadnet-v4';
+const DYNAMIC_CACHE = 'breadnet-dynamic-v4';
 //Incrementar en cada update!!
 
-// basic
 const STATIC_ASSETS = [
   '/breadnet/',
   '/breadnet/index.html',
@@ -20,18 +20,29 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+
+  if (
+    e.request.method !== 'GET' ||
+    url.origin !== self.location.origin
+  ) {
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(e.request).then((networkResponse) => {
-        return caches.open(DYNAMIC_CACHE).then((cache) => {
-          cache.put(e.request.url, networkResponse.clone());
-          return networkResponse;
+    fetch(e.request)
+      .then((networkResponse) => {
+        const responseClone = networkResponse.clone();
+        caches.open(DYNAMIC_CACHE).then((cache) => {
+          cache.put(e.request, responseClone);
         });
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(e.request).then((cachedResponse) => {
+          return cachedResponse || Promise.reject('No network connection | No cache available');
+        });
+      })
   );
 });
 
@@ -46,6 +57,6 @@ self.addEventListener('activate', (e) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
