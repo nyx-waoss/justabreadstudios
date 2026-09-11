@@ -1,6 +1,6 @@
 //sw.js
-const CACHE_NAME = 'breadnet-v4';
-const DYNAMIC_CACHE = 'breadnet-dynamic-v4';
+const CACHE_NAME = 'breadnet-v5';
+const DYNAMIC_CACHE = 'breadnet-dynamic-v5';
 //Incrementar en cada update!!
 
 const STATIC_ASSETS = [

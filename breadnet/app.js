@@ -102,8 +102,8 @@ function updateHeaderClock() {
 updateHeaderClock();
 setInterval(updateHeaderClock, 30000);
 
-const plataformActivated = localStorage.getItem('localTestingBN_activated'); //Comentar el viernes
-//const plataformActivated = "true"; //Descomentar el viernes
+//const plataformActivated = localStorage.getItem('localTestingBN_activated'); //Comentar el viernes
+const plataformActivated = "true"; //Descomentar el viernes
 
 $('notAvailable').classList.remove('hidden');
 $('login-section').classList.add('hidden');
@@ -609,13 +609,22 @@ $('settings_softLockSelect').onchange = () => {
 const SUPABASE_URL = "https://ogdnjfmeouevtybmuquq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nZG5qZm1lb3VldnR5Ym11cXVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMTExOTksImV4cCI6MjEwMzc4NzE5OX0.Vz_M2mf2qgZX-aWwHnQy0DI59EQJCDtYpl3aBt3TFtM";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabaseClient = null;
+if (typeof window.supabase !== 'undefined') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} else {
+    console.warn("Cannot load Supabase. Check your internet connection");
+}
 
 let currentUser = null;
 let userProfile = null;
 let peopleMap = {};
 
 document.getElementById('btn-login').addEventListener('click', async () => {
+  if (!navigator.onLine) {
+    $('login_error_message').textContent = `No hay conexión a internet.`;
+    return;
+  }
   const rawInput = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
@@ -629,12 +638,12 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     const { data: resolvedEmail, error: usernameError } = await supabaseClient.rpc('get_email_by_username', { lookup_username: rawInput.toLowerCase() });
 
     if (usernameError || !resolvedEmail) {
-      $('btn-login').disabled = false;
-      $('login-loading').classList.add('hidden');
-      $('page_login').style.cursor = "default";
-      $('login_error_message').textContent = `Correo o Contraseña incorrectos.`;
-      $('login_reset_password').classList.remove('hidden');
-      return;
+		$('btn-login').disabled = false;
+		$('login-loading').classList.add('hidden');
+		$('page_login').style.cursor = "default";
+		$('login_error_message').textContent = `Correo o Contraseña incorrectos.`;
+		$('login_reset_password').classList.remove('hidden');
+		return;
     }
     email = resolvedEmail;
   }
