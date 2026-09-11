@@ -35,6 +35,9 @@ function runDependentFunctionsOfPage(page) {
 	if (page === "directory") {
 		loadDirectory();
 	}
+	if (page === "identification") {
+		loadMyIdentification();
+	}
 }
 
 function gotoPage(page = "home") {
@@ -99,16 +102,16 @@ function updateHeaderClock() {
 updateHeaderClock();
 setInterval(updateHeaderClock, 30000);
 
-const plataformActivated = localStorage.getItem('localTestingBN_activated'); //Comentar el viernes
-//const plataformActivated = "true"; //Descomentar el viernes
+//const plataformActivated = localStorage.getItem('localTestingBN_activated'); //Comentar el viernes
+const plataformActivated = "true"; //Descomentar el viernes
 
 $('notAvailable').classList.remove('hidden');
 $('login-section').classList.add('hidden');
 setTimeout(() => {
-  if (plataformActivated && plataformActivated == "true") {
-    $('notAvailable').classList.add('hidden');
-    $('login-section').classList.remove('hidden');
-  }
+	if (plataformActivated && plataformActivated == "true") {
+		$('notAvailable').classList.add('hidden');
+		$('login-section').classList.remove('hidden');
+	}
 }, 100);
 
 function activatePlataformLocal() {
@@ -130,12 +133,12 @@ if (debugActivated) {
   console.log("[Debug] Welcome to BreadNet. Type bndebug('help') to see all available commands.");
 }
 function bndebug(com) {
-  if (com == 'help') {
-    console.log("= Command List =======");
-    console.log("activatePlataformLocal() .... Activate plataform locally if disabled");
-    console.log("disablePlataformLocal() ..... Disable plataform locally");
-    console.log("======================");
-  }
+	if (com == 'help') {
+		console.log("= Command List =======");
+		console.log("activatePlataformLocal() .... Activate plataform locally if disabled");
+		console.log("disablePlataformLocal() ..... Disable plataform locally");
+		console.log("======================");
+	}
 }
 
 function highlightElement(el) {
@@ -151,6 +154,29 @@ function highlightElement(el) {
 }
 
 //=================================
+// "Liquid Glass" for apple devices cuz android is poor HAHAAH (i have an android btw 😭)
+//=================================
+function isAppleDevice() {
+  if (navigator.userAgentData?.brands) {
+    const platform = navigator.userAgentData.platform?.toLowerCase() || '';
+    if (['macos', 'ios'].includes(platform)) {
+      return true;
+    }
+  }
+
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  const isTraditionalApple = /Mac|iPod|iPhone|iPad/.test(userAgent);
+
+  const isiPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+
+  return isTraditionalApple || isiPadOS;
+}
+
+if (isAppleDevice()) {
+  document.body.classList.add('apple_device');
+}
+
+//=================================
 // Params
 //=================================
 const urlParams = new URLSearchParams(window.location.search);
@@ -162,6 +188,19 @@ if (urlParams.get('help') == "1") {
 }
 
 //=================================
+// Identification
+//=================================
+function pageIdentificationShow(part = "front") {
+	if (part == "front") {
+		$('pageIdentificationIDP_front').classList.remove('hidden');
+		$('pageIdentificationIDP_back').classList.add('hidden');
+	} else {
+		$('pageIdentificationIDP_front').classList.add('hidden');
+		$('pageIdentificationIDP_back').classList.remove('hidden');
+	}
+}
+
+//=================================
 // Tooltip
 //=================================
 const tooltip = document.createElement('div');
@@ -169,38 +208,44 @@ tooltip.id = 'tooltip-global';
 document.body.appendChild(tooltip);
 
 document.addEventListener('mouseover', (e) => {
-  const target = e.target.closest('[data-tooltip]');
-  if (!target) return;
+	const target = e.target.closest('[data-tooltip]');
+	if (!target) return;
 
-  const text = target.getAttribute('data-tooltip');
-  const rect = target.getBoundingClientRect();
+	const text = target.getAttribute('data-tooltip');
+	const rect = target.getBoundingClientRect();
 
-  tooltip.textContent = text;
-  tooltip.style.opacity = '1';
+	tooltip.textContent = text;
+	tooltip.style.opacity = '1';
 
-  const top = rect.bottom + 6;
-  const left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2);
+	const top = rect.bottom + 6;
+	const left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2);
 
-  tooltip.style.top = top + "px";
-  tooltip.style.left = left + "px";
+	tooltip.style.top = top + "px";
+	tooltip.style.left = left + "px";
 });
 
 document.addEventListener('mouseout', (e) => {
-  if (e.target.closest('[data-tooltip]')) {
-    tooltip.style.opacity = '0';
-  }
+	if (e.target.closest('[data-tooltip]')) {
+		tooltip.style.opacity = '0';
+	}
 });
 
 //=================================
 // SW
 //=================================
 
-if ('serviceWorker' in navigator && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/breadnet/sw.js', { scope: '/breadnet/' })
-      .then((reg) => console.log('Service Worker registered in scope successfully:', reg.scope))
-      .catch((err) => console.error('Service Worker Error:', err));
-  });
+const isDevEnvironment = 
+  location.hostname === 'localhost' ||
+  location.hostname === '127.0.0.1' ||
+  location.hostname.endsWith('.devtunnels.ms') ||
+  location.hostname.endsWith('.ngrok-free.app');
+
+if ('serviceWorker' in navigator && !isDevEnvironment) {
+	window.addEventListener('load', () => {
+		navigator.serviceWorker.register('/breadnet/sw.js', { scope: '/breadnet/' })
+			.then((reg) => console.log('Service Worker registered in scope successfully:', reg.scope))
+			.catch((err) => console.error('Service Worker Error:', err));
+	});
 }
 
 //=================================
@@ -432,12 +477,12 @@ async function setting_changePIN() {
 }
 
 function checkSecurityWarning() {
-  const widget = $('dashboard_widget_security');
-  if (!userProfile.password_changed || !userProfile.pin_changed) {
-    widget.classList.remove('hidden');
-  } else {
-    widget.classList.add('hidden');
-  }
+	const widget = $('dashboard_widget_security');
+	if (!userProfile.password_changed || !userProfile.pin_changed) {
+		widget.classList.remove('hidden');
+	} else {
+		widget.classList.add('hidden');
+	}
 }
 
 async function resizeImageToBase64(file, size = 256, quality = 0.6) {
@@ -813,6 +858,7 @@ async function initDashboard(user) {
 		if (profile.role === 'ceo') {
 			$('maintenanceToggleBtn').classList.remove('hidden');
 			$('directoryBtn').classList.remove('hidden');
+      $('manage-identification-section').classList.remove('hidden');
 		}
 
 		requestNotificationPermission();
@@ -851,6 +897,7 @@ async function loadEmployeesDropdowns() {
   if (!people) return;
 
   const isCeo = userProfile.role === 'ceo';
+
   const manageable = isCeo
     ? people.filter(p => p.role === 'employee' || p.role === 'admin')
     : people.filter(p => p.role === 'employee');
@@ -865,12 +912,17 @@ async function loadEmployeesDropdowns() {
     select.appendChild(opt);
   });
 
+  const manageableForManagement = isCeo
+    ? [...manageable, people.find(p => p.id === currentUser.id)].filter(Boolean)
+    : manageable;
+
   const manageSelect = document.getElementById('manage-employee-select');
   manageSelect.innerHTML = '';
-  manageable.forEach(person => {
+  manageableForManagement.forEach(person => {
     const opt = document.createElement('option');
+    const isSelf = person.id === currentUser.id;
     opt.value = person.id;
-    opt.textContent = `${person.name}${person.role === 'admin' ? ' (Admin)' : ''}`;
+    opt.textContent = `${person.name}${person.role === 'admin' ? ' (Admin)' : ''}${isSelf ? ' (Usted)' : ''}`;
     manageSelect.appendChild(opt);
   });
 }
@@ -1358,6 +1410,14 @@ async function loadEmployeeManagement() {
 
   renderBanStatus(profile);
   renderManagedStrikesList(strikes);
+  $('working-areas-input').value = (profile.working_areas || []).join(', ');
+
+  if (userProfile.role === 'ceo') {
+    loadEmployeeIdentification(employeeId);
+    $('current-cid-display').textContent = profile.current_cid || 'Ninguno';
+    renderCidQr(profile.current_cid);
+    loadIdCardsHistory(employeeId);
+  }
 }
 
 function renderBanStatus(profile) {
@@ -2771,7 +2831,9 @@ const DIRECTORY_ADVANCED_COLUMNS = [
   { key: 'ban_expires_at', label: 'Baneo Expira' },
   { key: 'password_changed', label: 'Contraseña Cambiada' },
   { key: 'pin_changed', label: 'PIN Cambiado' },
-  { key: 'photo_url', label: 'Foto de Perfil' }
+  { key: 'photo_url', label: 'Foto de Perfil' },
+  { key: 'current_cid', label: 'CID Ligado' },
+  { key: 'working_areas', label: 'Departamentos' }
 ];
 
 async function loadDirectory() {
@@ -2794,7 +2856,7 @@ async function loadDirectory() {
   (emailsData || []).forEach(e => { emailMap[e.id] = e.email; });
 
   directoryFullData = profilesData
-    .filter(p => p.role !== 'ceo') 
+    /*.filter(p => p.role !== 'ceo') */
     .map(p => ({ ...p, email: emailMap[p.id] || '—' }));
 
   renderDirectoryTable(directoryFullData);
@@ -2912,4 +2974,330 @@ function exportDirectoryCsv() {
   link.download = `breadnet-directorio-${new Date().toISOString().split('T')[0]}.csv`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+//=================================
+// Identifications (photos and data)
+//=================================
+let currentManagedIdentification = null;
+
+async function loadEmployeeIdentification(employeeId) {
+  const { data, error } = await supabaseClient
+    .from('employee_identification')
+    .select('*')
+    .eq('user_id', employeeId)
+    .maybeSingle();
+
+  if (error) { console.error(error); return; }
+
+  currentManagedIdentification = data;
+
+  $('id-number-input').value = data?.id_number || '';
+  $('id-unique-input').value = data?.unique_id_number || '';
+  $('id-registered-input').value = data?.registered_at || '';
+  $('id-valid-input').checked = data ? data.is_valid : true;
+  $('id-requests-input').value = data?.requests_count ?? 0;
+  $('id-lost-input').value = data?.lost_count ?? 0;
+}
+
+async function saveEmployeeIdentification() {
+  if (!currentManagedEmployee) return;
+
+  const payload = {
+    user_id: currentManagedEmployee.id,
+    id_number: $('id-number-input').value.trim() || null,
+    unique_id_number: $('id-unique-input').value.trim() || null,
+    registered_at: $('id-registered-input').value || null,
+    is_valid: $('id-valid-input').checked,
+    requests_count: parseInt($('id-requests-input').value) || 0,
+    lost_count: parseInt($('id-lost-input').value) || 0,
+    updated_at: new Date().toISOString(),
+    updated_by: currentUser.id
+  };
+
+  $('loadingModal').classList.remove('hidden');
+  $('loadingModal').querySelector('span').textContent = "Guardando identificación...";
+
+  const frontInput = $('id-photo-front-input');
+  const backInput = $('id-photo-back-input');
+
+  if (frontInput.files.length > 0) {
+    let file = frontInput.files[0];
+    try {
+      const resized = await resizeImagePreservingAspect(file, 1024, 0.85);
+      if (resized) file = new File([resized], file.name, { type: resized.type });
+    } catch (e) {}
+
+    const path = `id-photos/${currentManagedEmployee.id}-front-${Date.now()}-${file.name}`;
+    const { error: upErr } = await supabaseClient.storage.from('shared-files').upload(path, file);
+    if (upErr) {
+      $('loadingModal').classList.add('hidden');
+      showMsgBox('error', 'Error', `No se pudo subir la foto frontal: ${upErr.message}`, 'Cerrar');
+      return;
+    }
+    const { data: urlData } = supabaseClient.storage.from('shared-files').getPublicUrl(path);
+    payload.photo_front_url = urlData.publicUrl;
+  }
+
+  if (backInput.files.length > 0) {
+    let file = backInput.files[0];
+    try {
+      const resized = await resizeImagePreservingAspect(file, 1024, 0.85);
+      if (resized) file = new File([resized], file.name, { type: resized.type });
+    } catch (e) {}
+
+    const path = `id-photos/${currentManagedEmployee.id}-back-${Date.now()}-${file.name}`;
+    const { error: upErr } = await supabaseClient.storage.from('shared-files').upload(path, file);
+    if (upErr) {
+      $('loadingModal').classList.add('hidden');
+      showMsgBox('error', 'Error', `No se pudo subir la foto trasera: ${upErr.message}`, 'Cerrar');
+      return;
+    }
+    const { data: urlData } = supabaseClient.storage.from('shared-files').getPublicUrl(path);
+    payload.photo_back_url = urlData.publicUrl;
+  }
+
+  const { data, error } = await supabaseClient
+    .from('employee_identification')
+    .upsert([payload], { onConflict: 'user_id' })
+    .select();
+
+  $('loadingModal').classList.add('hidden');
+
+  if (error || !data || data.length === 0) {
+    showMsgBox('error', 'Error', `No se pudo guardar: ${error ? error.message : 'permiso denegado'}`, 'Cerrar');
+    return;
+  }
+
+  frontInput.value = '';
+  backInput.value = '';
+  showMsgBox('success', 'Éxito!', 'Identificación actualizada.', 'Cerrar');
+  loadEmployeeIdentification(currentManagedEmployee.id);
+}
+
+async function loadMyIdentification() {
+  const { data, error } = await supabaseClient
+    .from('employee_identification')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  if (error) { console.error(error); return; }
+
+  $('idData-number').textContent = data?.id_number || 'No asignado';
+  $('idData-unique').textContent = data?.unique_id_number || 'No asignado';
+  $('idData-registered').textContent = data?.registered_at ? new Date(data.registered_at).toLocaleDateString() : 'No asignado';
+  $('idData-valid').textContent = data ? (data.is_valid ? 'Sí' : 'No') : 'No asignado';
+  $('idData-requests').textContent = data?.requests_count ?? 0;
+  $('idData-lost').textContent = data?.lost_count ?? 0;
+
+  if (data?.photo_front_url) $('pageIdentificationIDP_front').src = data.photo_front_url;
+  if (data?.photo_back_url) $('pageIdentificationIDP_back').src = data.photo_back_url;
+}
+
+//=================================
+// Public CID / ID QR Code
+//=================================
+(function checkCidParam() {
+  const params = new URLSearchParams(window.location.search);
+  const cid = params.get('cid');
+  if (cid) {
+    $('cidLookupScreen').classList.remove('hidden');
+    lookupCid(cid);
+  }
+})();
+
+async function lookupCid(cid) {
+  const body = $('cidLookupBody');
+  body.innerHTML = '<span>Verificando ID...</span>';
+
+  const { data, error } = await supabaseClient.rpc('lookup_id_card_public', { p_cid: cid });
+
+  if (error || !data) {
+    body.innerHTML = `<i class="fi fi-rr-triangle-warning"></i><h2>Error</h2><span>No se pudo verificar este ID en este momento.</span>`;
+    return;
+  }
+
+  if (data.status === 'not_found') {
+    body.innerHTML = `<i class="fi fi-rr-triangle-warning"></i><h2>ID no encontrado</h2><span>Este código no corresponde a ningún ID de BreadNet.</span>`;
+  } else if (data.status === 'lost' || data.status === 'stolen') {
+    body.innerHTML = `<i class="fi fi-rr-ban"></i><h2>ID ${data.status === 'lost' ? 'Perdido' : 'Robado'}</h2><span>Este ID ha sido reportado como ${data.status === 'lost' ? 'perdido' : 'robado'} y ya no es válido. Por favor, entrégalo al departamento de sistemas de Just A Bread Studios.</span>`;
+  } else if (data.status === 'active') {
+    body.innerHTML = `
+      <img src="${data.photo_url || '/assets/userdefault.jpg'}" class="cidLookupPhoto">
+      <h2>${data.name}</h2>
+      <span><i class="fi fi-rr-envelope"></i> ${data.email || 'No disponible'}</span>
+      <span><i class="fi fi-rr-phone-call"></i> ${data.phone_number || 'No disponible'}</span>
+      ${data.working_areas && data.working_areas.length ? `<span><i class="fi fi-rr-briefcase"></i> ${data.working_areas.join(', ')}</span>` : ''}
+      <p class="cidLookupValidBadge"><i class="fi fi-br-check"></i> ID Vigente</p>
+    `;
+  } else {
+    body.innerHTML = `<span>Estado desconocido.</span>`;
+  }
+}
+
+//=================================
+// CID/IDs Manager
+//=================================
+function renderCidQr(cid) {
+  if (!cid) {
+    $('current-cid-qr-wrapper').classList.add('hidden');
+    return;
+  }
+  const lookupUrl = `${window.location.origin}${window.location.pathname}?cid=${encodeURIComponent(cid)}`;
+  $('current-cid-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(lookupUrl)}`;
+  $('current-cid-qr-wrapper').classList.remove('hidden');
+}
+
+async function assignNewCid() {
+  if (!currentManagedEmployee) return;
+  const newCid = $('new-cid-input').value.trim();
+  if (!newCid) {
+    showMsgBox('error', 'Error', 'Ingresa un CID.', 'Cerrar');
+    return;
+  }
+
+  const oldCid = currentManagedEmployee.current_cid;
+
+  if (oldCid === newCid) {
+    showMsgBox('error', 'Error', 'Ese ya es el CID actual de este empleado.', 'Cerrar');
+    return;
+  }
+
+  let oldCidReason = null;
+  if (oldCid) {
+    const choice = await showAskBox(
+      'warn',
+      'ID Anterior Detectado',
+      `Este empleado ya tenía un ID (CID: ${oldCid}). ¿Cómo se debe marcar el ID anterior?`,
+      'Marcar como Perdido',
+      'Marcar como Robado'
+    );
+    oldCidReason = choice.confirmed ? 'lost' : 'stolen';
+  }
+
+  $('loadingModal').classList.remove('hidden');
+  $('loadingModal').querySelector('span').textContent = "Asignando nuevo ID...";
+
+  if (oldCid && oldCidReason) {
+    await supabaseClient
+      .from('id_cards')
+      .update({
+        status: oldCidReason,
+        status_reason: 'Reemplazado por nuevo ID',
+        status_changed_at: new Date().toISOString(),
+        status_changed_by: currentUser.id
+      })
+      .eq('cid', oldCid);
+  }
+
+  const { error: insertError } = await supabaseClient.from('id_cards').insert([{
+    cid: newCid,
+    user_id: currentManagedEmployee.id,
+    status: 'active'
+  }]);
+
+  if (insertError) {
+    $('loadingModal').classList.add('hidden');
+    showMsgBox('error', 'Error', `No se pudo crear el nuevo ID (¿CID duplicado?): ${insertError.message}`, 'Cerrar');
+    return;
+  }
+
+  const { data, error: updateError } = await supabaseClient
+    .from('profiles')
+    .update({ current_cid: newCid })
+    .eq('id', currentManagedEmployee.id)
+    .select();
+
+  $('loadingModal').classList.add('hidden');
+
+  if (updateError || !data || data.length === 0) {
+    showMsgBox('error', 'Error', `No se pudo actualizar el CID actual: ${updateError ? updateError.message : 'permiso denegado'}`, 'Cerrar');
+    return;
+  }
+
+  currentManagedEmployee.current_cid = newCid;
+  $('current-cid-display').textContent = newCid;
+  $('new-cid-input').value = '';
+  renderCidQr(newCid);
+  showMsgBox('success', 'Éxito!', 'Nuevo ID asignado.', 'Cerrar');
+  loadIdCardsHistory(currentManagedEmployee.id);
+}
+
+async function loadIdCardsHistory(employeeId) {
+  const { data, error } = await supabaseClient
+    .from('id_cards')
+    .select('*')
+    .eq('user_id', employeeId)
+    .order('issued_at', { ascending: false });
+
+  if (error) { console.error(error); return; }
+
+  const container = $('id-cards-history');
+  container.innerHTML = '';
+
+  if (!data || data.length === 0) {
+    container.innerHTML = '<span>Este empleado no tiene IDs registrados.</span>';
+    return;
+  }
+
+  const currentCid = currentManagedEmployee?.current_cid;
+
+  data.forEach(card => {
+    const isCurrent = card.cid === currentCid;
+    const div = document.createElement('div');
+    div.className = 'element';
+    div.innerHTML = `
+      <i class="fi fi-rr-id-badge"></i>
+      <span>${card.cid} ${isCurrent ? '<strong>(Actual)</strong>' : ''} — <span class="directory-badge ${card.status === 'active' ? 'ok' : 'danger'}">${card.status}</span></span>
+      ${!isCurrent && card.status === 'active' ? `
+        <button class="btnsmall" onclick="markIdCardStatus('${card.cid}', 'lost')" data-tooltip="Marcar Perdido"><i class="fi fi-rr-question"></i></button>
+        <button class="btnsmall" onclick="markIdCardStatus('${card.cid}', 'stolen')" data-tooltip="Marcar Robado"><i class="fi fi-rr-ban"></i></button>
+      ` : ''}
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function markIdCardStatus(cid, status) {
+  const confirmMsg = await showAskBox('warn', 'Confirmar', `¿Marcar el ID ${cid} como ${status === 'lost' ? 'perdido' : 'robado'}?`, 'Confirmar', 'Cancelar');
+  if (!confirmMsg.confirmed) return;
+
+  $('loadingModal').classList.remove('hidden');
+  const { error } = await supabaseClient
+    .from('id_cards')
+    .update({ status, status_reason: 'Marcado manualmente', status_changed_at: new Date().toISOString(), status_changed_by: currentUser.id })
+    .eq('cid', cid);
+  $('loadingModal').classList.add('hidden');
+
+  if (error) {
+    showMsgBox('error', 'Error', `No se pudo actualizar: ${error.message}`, 'Cerrar');
+    return;
+  }
+  showMsgBox('success', 'Éxito!', 'ID actualizado.', 'Cerrar');
+  loadIdCardsHistory(currentManagedEmployee.id);
+}
+
+//=================================
+// Work Areas
+//=================================
+async function saveWorkingAreas() {
+  if (!currentManagedEmployee) return;
+  const raw = $('working-areas-input').value.trim();
+  const areas = raw ? raw.split(',').map(a => a.trim()).filter(Boolean) : [];
+
+  $('loadingModal').classList.remove('hidden');
+  const { data, error } = await supabaseClient
+    .from('profiles')
+    .update({ working_areas: areas })
+    .eq('id', currentManagedEmployee.id)
+    .select();
+  $('loadingModal').classList.add('hidden');
+
+  if (error || !data || data.length === 0) {
+    showMsgBox('error', 'Error', `No se pudo guardar: ${error ? error.message : 'permiso denegado'}`, 'Cerrar');
+    return;
+  }
+  currentManagedEmployee.working_areas = areas;
+  showMsgBox('success', 'Éxito!', 'Áreas de trabajo actualizadas.', 'Cerrar');
 }

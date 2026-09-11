@@ -28,6 +28,7 @@
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-bold-rounded/css/uicons-bold-rounded.css'>
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-straight/css/uicons-regular-straight.css'>
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-solid-rounded/css/uicons-solid-rounded.css'>
+	<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-thin-straight/css/uicons-thin-straight.css'>
 
     <script type="application/ld+json">
     {
@@ -47,7 +48,14 @@
 
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
 </head>
-<body>
+<body ontouchstart="">
+	<div id="cidLookupScreen" class="hidden">
+		<div id="cidLookupContent">
+			<img alt="BreadNet Logo" src="/assets/breadnet_d.png" class="logo">
+			<div id="cidLookupBody">Cargando...</div>
+		</div>
+	</div>
+
 	<nav id="sidebar" class="hidden">
 		<button onclick="gotoPage('home')"> <i class="fi fi-rr-house-chimney"></i> <span class="text">Inicio</span> </button>
 		<button onclick="gotoPage('tasks')"> <i class="fi fi-rr-task-checklist"></i> <span class="text">Tareas</span> </button>
@@ -55,11 +63,12 @@
 
 		<div class="sidebar-category" id="accountCategory">
 			<button onclick="toggleSidebarCategory('accountCategory')" class="category-toggle">
-				<i class="fi fi-rr-portrait"></i> <span class="text">Cuenta</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
+				<i class="fi fi-rr-user"></i> <span class="text">Cuenta</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
 			</button>
 			<div class="category-submenu">
-				<button onclick="gotoPage('strikes')"> <i class="fi fi-rr-portrait"></i> <span class="text">Strikes y Estado</span> </button>
+				<button onclick="gotoPage('strikes')"> <i class="fi fi-rr-portrait"></i> <span class="text">Strikes y Cuenta</span> </button>
 				<button onclick="gotoPage('requests')"> <i class="fi fi-rr-envelope"></i> <span class="text">Solicitudes</span> </button>
+				<button onclick="gotoPage('identification')"> <i class="fi fi-rr-id-badge"></i> <span class="text">Identificación</span> </button>
 			</div>
 		</div>
 
@@ -412,6 +421,10 @@
 		<input type="text" id="manage-username-input" placeholder="username (sin espacios, sin números)">
 		<button onclick="updateEmployeeUsername()">Guardar Usuario</button>
 
+		<h4>Áreas de trabajo</h4>
+		<input type="text" id="working-areas-input" placeholder="Áreas separadas por coma (ej. Diseño, Programación)">
+		<button onclick="saveWorkingAreas()">Guardar Áreas</button>
+
 		<h4>Agregar Strike</h4>
 		<input type="text" id="strike-short-reason" placeholder="Motivo breve (obligatorio)">
 		<textarea id="strike-detailed-reason" placeholder="Detalle del motivo (obligatorio)"></textarea>
@@ -432,6 +445,39 @@
 
 		<h4>Strikes de este empleado</h4>
 		<div id="manage-strikes-list"></div>
+
+		<div id="manage-identification-section" class="hidden">
+			<h4>Identificación</h4>
+			<input type="text" id="id-number-input" placeholder="Número de Identificación">
+			<input type="text" id="id-unique-input" placeholder="Número de ID único">
+			<span>Fecha de registro:</span>
+			<input type="date" id="id-registered-input">
+			<label><input type="checkbox" id="id-valid-input"> Vigente</label>
+			<span>IDs solicitados este año:</span>
+			<input type="number" id="id-requests-input" min="0">
+			<span>IDs marcados como robados/perdidos:</span>
+			<input type="number" id="id-lost-input" min="0">
+
+			<span>Foto Frontal:</span>
+			<input type="file" id="id-photo-front-input" accept="image/*">
+			<span>Foto Trasera:</span>
+			<input type="file" id="id-photo-back-input" accept="image/*">
+
+			<button onclick="saveEmployeeIdentification()"><i class="fi fi-rr-id-badge"></i> Guardar Identificación</button>
+
+			<h4>CID / Tarjeta Física</h4>
+			<span>CID actual: <strong id="current-cid-display">Ninguno</strong></span>
+			<input type="text" id="new-cid-input" placeholder="Nuevo CID (ej. 71342601)">
+			<button onclick="assignNewCid()"><i class="fi fi-rr-id-card"></i> Asignar como ID Actual</button>
+
+			<div id="current-cid-qr-wrapper" class="hidden">
+				<img id="current-cid-qr" alt="Código QR">
+				<span>Código QR para imprimir en la tarjeta</span>
+			</div>
+
+			<span class="subtitle">Historial de IDs de este empleado:</span>
+			<div id="id-cards-history"></div>
+		</div>
 	</div>
   </section>
 
@@ -539,6 +585,33 @@
 				<tbody id="directory-table-body"></tbody>
 			</table>
 		</div>
+	</section>
+
+	<section class="page hidden" id="page_identification">
+		<h3>Identificación</h3>
+		<div class="top_wrapper">
+			<div class="IDPhotosWrapper">
+				<img alt="Account ID Photo Front" src="/assets/IDTfront.png" id="pageIdentificationIDP_front">
+				<img alt="Account ID Photo Back" src="/assets/IDTback.png" id="pageIdentificationIDP_back" class="hidden">
+				<div class="controls">
+					<button onclick="pageIdentificationShow('front')"><i class="fi fi-rr-id-badge"></i> Frente</button>
+					<button onclick="pageIdentificationShow('back')"><i class="fi fi-rr-qrcode"></i> Atras</button>
+				</div>
+			</div>
+			<div class="idData">
+				<span class="title">Datos de su Identificación</span>
+
+				<span><i class="fi fi-ts-hashtag"></i> Numero de Identificación: <strong id="idData-number">—</strong></span>
+				<span><i class="fi fi-sr-fingerprint"></i> Numero de ID único: <strong id="idData-unique">—</strong></span>
+				<span><i class="fi fi-sr-calendar"></i> Fecha de registro de ID: <strong id="idData-registered">—</strong></span>
+				<span><i class="fi fi-sr-shield-trust"></i> Vigente: <strong id="idData-valid">—</strong></span>
+				<span><i class="fi fi-sr-tally"></i> IDs solicitados este año: <strong id="idData-requests">—</strong></span>
+				<span><i class="fi fi-sr-question"></i> IDs marcados como robados/perdidos: <strong id="idData-lost">—</strong></span>
+			</div>
+		</div>
+		<h3>Perdida</h3>
+		<span>En caso de perdida o robo, abra inmediatamente una solicitud para mayor seguridad.</span>
+		<button onclick="gotoPage('requests')" style="margin-top: 12px;">Ir a solicitudes</button>
 	</section>
 
 

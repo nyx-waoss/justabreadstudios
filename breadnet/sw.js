@@ -1,5 +1,5 @@
-const CACHE_NAME = 'breadnet-v1';
-const DYNAMIC_CACHE = 'breadnet-dynamic-v1';
+const CACHE_NAME = 'breadnet-v2';
+const DYNAMIC_CACHE = 'breadnet-dynamic-v2';
 //Incrementar en cada update!!
 
 // basic
