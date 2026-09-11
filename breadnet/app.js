@@ -102,8 +102,8 @@ function updateHeaderClock() {
 updateHeaderClock();
 setInterval(updateHeaderClock, 30000);
 
-//const plataformActivated = localStorage.getItem('localTestingBN_activated'); //Comentar el viernes
-const plataformActivated = "true"; //Descomentar el viernes
+const plataformActivated = localStorage.getItem('localTestingBN_activated'); //Comentar el viernes
+//const plataformActivated = "true"; //Descomentar el viernes
 
 $('notAvailable').classList.remove('hidden');
 $('login-section').classList.add('hidden');
@@ -138,7 +138,9 @@ function bndebug(com) {
 		console.log("activatePlataformLocal() .... Activate plataform locally if disabled");
 		console.log("disablePlataformLocal() ..... Disable plataform locally");
 		console.log("======================");
-	}
+	} else if (com == 'version') {
+    console.log("BreadNet v1.0.0 --- Deploy 6 --- TSXG v1.0.0");
+  }
 }
 
 function highlightElement(el) {
