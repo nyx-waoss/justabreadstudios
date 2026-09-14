@@ -5,13 +5,15 @@ function hideAllPages() {
 
 let loggedIn = false;
 
-function runDependentFunctionsOfPage(page) {
+async function runDependentFunctionsOfPage(page) {
 	if (page === "strikes") {
 		loadMyAccountStatus();
 	}
 	if (page === "home") {
 		loadMyAccountStatus();
     	loadLatestAnnouncementWidget();
+		loadCustomBanner();
+		loadQuickActionsWidget();
 	}
 	if (page === "requests") {
 		populateRequestAdminSelect();
@@ -38,10 +40,29 @@ function runDependentFunctionsOfPage(page) {
 	if (page === "identification") {
 		loadMyIdentification();
 	}
+	if (page === "store") {
+		//loadStore(); //descomentar cuando se lanze la store
+		await showAskBox('warn', 'No disponible', 'La tienda todavia no esta disponible, pero la agregaremos en la proxima actualizacion!', 'Vale', 'Cerrar'); //comentar cuando se lanze la store
+		gotoPage('home');
+	}
+	if (page === "settings") {
+		loadInventory();
+	}
+	if (page === "termsreview") {
+		loadTermsReviewPanel();
+	}
+
+	if (page === "chat" && loggedIn) {
+		subscribeToChatRealtime();
+		loadChatsList();
+	} else {
+		unsubscribeFromChatRealtime();
+	}
 }
 
 function gotoPage(page = "home") {
 	hideAllPages();
+	console.log("Navigate to:", page);
 	try {
 		hideMobileSidebar();
 
@@ -60,7 +81,15 @@ function gotoPage(page = "home") {
 		}
 
 		if (page !== 'login' && loggedIn) {
-			supabaseClient.from('activity_log').insert([{ user_id: currentUser.id, event_type: 'page_view', page }]);
+			const deviceInfo = detectDeviceInfo();
+			supabaseClient.from('activity_log').insert([{
+				user_id: currentUser.id,
+				event_type: 'page_view',
+				page,
+				device_type: deviceInfo.deviceType,
+				os_name: deviceInfo.osName,
+				browser_name: deviceInfo.browserName
+			}]);
 		}
 	} catch(e) {
 		console.error('Error when loading page:', e);
@@ -155,6 +184,32 @@ function highlightElement(el) {
     }, { once: true });
 }
 
+$('headerMoreOptionsBtn').onclick = () => {
+	$('headerMoreOptionsDialog').classList.toggle('show');
+};
+
+$('headerMoreOptionsDialog_btnSearch').onclick = () => {
+	setTimeout(() => {
+		document.getElementById('header').classList.toggle('displaySearch');
+
+		$('headerMoreOptionsDialog').classList.remove('show');
+	}, 100);
+};
+$('headerMoreOptionsDialog_btnLock').onclick = () => {
+	setTimeout(() => {
+		manualIdleLock();
+
+		$('headerMoreOptionsDialog').classList.remove('show');
+	}, 100);
+};
+$('headerMoreOptionsDialog_btnSticky').onclick = () => {
+	setTimeout(() => {
+		createStickyNote();
+
+		$('headerMoreOptionsDialog').classList.remove('show');
+	}, 100);
+};
+
 //=================================
 // "Liquid Glass" for apple devices cuz android is poor HAHAAH (i have an android btw 😭)
 //=================================
@@ -177,6 +232,73 @@ function isAppleDevice() {
 if (isAppleDevice()) {
   document.body.classList.add('apple_device');
 }
+
+//=================================
+// Weather Widget
+//=================================
+	async function cargarClima() {
+	let lat = 9.9281;
+	let lon = -84.0907;
+
+	try {
+		const ipRes = await fetch('https://ipapi.co/json/');
+		const ipData = await ipRes.json();
+		if (ipData.latitude && ipData.longitude) {
+			lat = ipData.latitude;
+			lon = ipData.longitude;
+		}
+	} catch (e) {
+		console.log("Uso de ubicación default (San José)");
+	}
+
+	try {
+		const weatherRes = await fetch(
+			`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+		);
+		const weatherData = await weatherRes.json();
+		const temp = Math.round(weatherData.current_weather.temperature);
+		const code = weatherData.current_weather.weathercode;
+
+		const infoClima = obtenerDetallesClima(code);
+
+		$('weatherTitle').innerText = `${infoClima.texto} | ${temp}°C`;
+		$('weatherPreviewBg').style.backgroundImage = `url('${infoClima.bg}')`;
+	} catch (e) {
+		console.error("Error al cargar clima", e);
+	}
+}
+
+function obtenerDetallesClima(code) {
+	if (code === 0) {
+		return {
+			texto: "Soleado",
+			bg: "https://images.unsplash.com/photo-1615286628718-4a4c8924d0eb?q=80&w=1170&auto=format&fit=crop"
+		};
+	} else if ([1, 2, 3].includes(code)) {
+		return {
+			texto: "Parcialmente Nublado",
+			bg: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?q=80&w=800&auto=format&fit=crop"
+		};
+	} else if ([51, 53, 55, 61, 63, 65, 80, 81].includes(code)) {
+		return {
+			texto: "Lluvia leve",
+			bg: "https://images.unsplash.com/photo-1507027682794-35e6c12ad5b4?q=80&w=687&auto=format&fit=crop"//https://images.unsplash.com/photo-1519692933481-e162a57d6721?q=80&w=800&auto=format&fit=crop
+		};
+	} else if ([95, 96, 99].includes(code)) {
+		return {
+			texto: "Tormenta",
+			bg: "https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?q=80&w=800&auto=format&fit=crop" //https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.vecteezy.com%2Fsystem%2Fresources%2Fthumbnails%2F042%2F195%2F723%2Fsmall_2x%2Fai-generated-rainy-sky-observations-background-free-photo.jpg&f=1&nofb=1&ipt=b002fe9358c3621b73b0b9ba71743dad09b922ba49c173124ee60f012a7868bb
+		};
+	}
+	
+	return {
+		texto: "Nublado",
+		bg: "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?q=80&w=800&auto=format&fit=crop"
+	};
+}
+
+
+cargarClima();
 
 //=================================
 // Params
@@ -435,6 +557,7 @@ async function setting_changePassword() {
 		userProfile.password_changed = true;
 		showMsgBox('success', 'Éxito!', 'Contraseña cambiada!', 'Cerrar');
 		checkSecurityWarning();
+		addCatPoints(5, 'Cambio de contraseña');
 	}
 }
 
@@ -475,6 +598,7 @@ async function setting_changePIN() {
 		userProfile.pin_changed = true;
 		showMsgBox('success', 'Éxito!', 'PIN cambiado!', 'Cerrar');
 		checkSecurityWarning();
+		addCatPoints(5, 'Cambio de PIN');
 	}
 }
 
@@ -577,7 +701,7 @@ async function setting_changePFP() {
 		}
 
 		if (!data || data.length === 0) {
-			showMsgBox('error', 'Error', 'No se pudo actualizar el perfil (posible bloqueo de permisos).', 'Cerrar');
+			showMsgBox('error', 'Error', 'No se pudo actualizar el perfil (error interno del servidor, por favor reporte este error).', 'Cerrar');
 			return;
 		}
 
@@ -664,7 +788,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
 		$('login_error_message').textContent = `Por favor, rellene todos los datos.`;
   	} else if (error.message.toLowerCase().includes('failed to fetch')) {
 		if (navigator.onLine) {
-			$('login_error_message').textContent = `Ocurrio un error de comunicacion con el servidor, reintentelo más tarde.`;
+			$('login_error_message').textContent = `Ocurrio un error de comunicacion con el servidor, intentelo nuevamente.`;
 		} else {
 			$('login_error_message').textContent = `No hay conexión a internet.`;
 		}
@@ -799,63 +923,79 @@ function getAutomaticGreeting(pf_name, pf_role) {
   return `<${tag}>${text}</${tag}>,<br>${pf_name}`;
 }
 
+const breadNetProgramVer = "1";
 async function initDashboard(user) {
-  currentUser = user;
-  recordLoginTimestamp(user.id);
+	currentUser = user;
+	//recordLoginTimestamp(user.id);
+	updateLoginStreak();
 
-  const { data: profile, error } = await supabaseClient
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+	const { data: profile, error } = await supabaseClient
+		.from('profiles')
+		.select('*')
+		.eq('id', user.id)
+		.single();
 
-  
-  $('btn-login').disabled = false;
-  $('login-loading').classList.add('hidden');
-  $('page_login').style.cursor = "default";
+	
+	$('btn-login').disabled = false;
+	$('login-loading').classList.add('hidden');
+	$('page_login').style.cursor = "default";
 
-  if (error) {
-    console.error("Error loading profile:", error);
-    return;
-  }
+	if (error) {
+		console.error("Error loading profile:", error);
+		return;
+	}
 
-  userProfile = profile;
-  loggedIn = true;
+	userProfile = profile;
+	loggedIn = true;
+	await checkTermsStatus();
+	subscribeToTermsChanges();
 
-  checkSecurityWarning();
+  	checkSecurityWarning();
 
 	if (!profile.password_changed || !profile.pin_changed) {
 		const gotoChangeData = await showAskBox('warn', 'Cuenta Desprotegida', 'Nunca ha cambiado su contraseña o PIN desde la creación de su cuenta. Desea cambiar esos datos ahora mismo?', 'Ir a configuración', 'Más tarde');
-    setTimeout(() => {
-      if (gotoChangeData && gotoChangeData.confirmed) {
-        gotoPage('settings');
-        highlightElement($('settingsBtn_changePass'));
-        highlightElement($('settingsBtn_changePIN'));
-      }
-    }, 100);
+		setTimeout(() => {
+			if (gotoChangeData && gotoChangeData.confirmed) {
+				gotoPage('settings');
+				highlightElement($('settingsBtn_changePass'));
+				highlightElement($('settingsBtn_changePIN'));
+			}
+		}, 100);
 	}
 
-  gotoPage('home');
-  document.getElementById('user-welcome').innerHTML = getAutomaticGreeting(profile.name, profile.role);
-  $('header_pfp').querySelector('.name').textContent = profile.name;
-  $('settings_displayName').textContent = `${profile.name}`;
-  $('settings_userExtraInfo').textContent = `Tipo de cuenta: ${profile.role} | Username: ${profile.username}`;
+	if ( !localStorage.getItem('breadnetProgramVer')
+			|| (localStorage.getItem('breadnetProgramVer') && Number(localStorage.getItem('breadnetProgramVer')) < Number(breadNetProgramVer))
+		) {
+		setTimeout(() => {
+			showMsgBox('info', 'Sistema Actualizado', 'BreadNet acaba de actualizarse a la version v1.0.1, incluyendo nuevas funciones ✨️', 'Cerrar');
+		}, 300);
+		localStorage.setItem('breadnetProgramVer', breadNetProgramVer);
+	}
 
-  if (!profile.photo_url) {
-	console.error('Missing PFP');
+	gotoPage('home');
+	document.getElementById('user-welcome').innerHTML = await getSmartGreeting(profile);
+	$('header_pfp').querySelector('.name').textContent = profile.name;
+	$('settings_displayName').textContent = `${profile.name}`;
+	$('settings_userExtraInfo').textContent = `Tipo de cuenta: ${profile.role} | Username: ${profile.username}`;
 
-	$('headerPFPimg').src = '/assets/userdefault.jpg';
-	$('softLockPFPImg').src = '/assets/userdefault.jpg';
-	$('strikesPagePFPimg').src = '/assets/userdefault.jpg';
-	$('settings_pfp').src = '/assets/userdefault.jpg';
-  } else {
-	$('headerPFPimg').src = profile.photo_url;
-	$('softLockPFPImg').src = profile.photo_url;
-	$('strikesPagePFPimg').src = profile.photo_url;
-	$('settings_pfp').src = profile.photo_url;
-  }
+	if (!profile.photo_url) {
+		console.error('Missing PFP');
 
-  await loadPeopleMap();
+		$('headerPFPimg').src = '/assets/userdefault.jpg';
+		$('softLockPFPImg').src = '/assets/userdefault.jpg';
+		$('strikesPagePFPimg').src = '/assets/userdefault.jpg';
+		$('settings_pfp').src = '/assets/userdefault.jpg';
+	} else {
+		$('headerPFPimg').src = profile.photo_url;
+		$('softLockPFPImg').src = profile.photo_url;
+		$('strikesPagePFPimg').src = profile.photo_url;
+		$('settings_pfp').src = profile.photo_url;
+	}
+
+	applyEquippedItems();
+
+  	await loadPeopleMap();
+	await loadSystemAccountIds();
 
 	if (['admin', 'ceo'].includes(profile.role)) {
 		await loadEmployeesDropdowns();
@@ -863,44 +1003,57 @@ async function initDashboard(user) {
 		$('assigneTaskBtn').classList.remove('hidden');
 		$('admin-upload-file').classList.remove('hidden');
     	$('admin-create-announcement').classList.remove('hidden');
-
+		$('newGroupBtn').classList.remove('hidden');
 		$('adminCategory').classList.remove('hidden');
 
 		if (profile.role === 'ceo') {
 			$('maintenanceToggleBtn').classList.remove('hidden');
 			$('directoryBtn').classList.remove('hidden');
-      $('manage-identification-section').classList.remove('hidden');
+      		$('manage-identification-section').classList.remove('hidden');
+			$('admin-store-manage').classList.remove('hidden');
+			$('publishTermsBtn').classList.remove('hidden');
+			$('termsReviewBtn').classList.remove('hidden');
 		}
 
 		requestNotificationPermission();
 		subscribeToIncomingRequests();
 	}
 
-  loadTasks();
-  subscribeToTasks();
-  loadNotifications();
-  setupPresence();
-  subscribeToMaintenanceMode();
-  await supabaseClient.from('activity_log').insert([{ user_id: currentUser.id, event_type: 'login' }]);
+	loadTasks();
+	subscribeToTasks();
+	loadNotifications();
+	setupPresence();
+	subscribeToMaintenanceMode();
+	const deviceInfo = detectDeviceInfo();
+	await supabaseClient.from('activity_log').insert([{
+		user_id: currentUser.id,
+		event_type: 'login',
+		device_type: deviceInfo.deviceType,
+		os_name: deviceInfo.osName,
+		browser_name: deviceInfo.browserName
+	}]);
 }
 
 async function loadPeopleMap() {
-  const { data: people, error } = await supabaseClient
-    .from('profiles')
-    .select('id, name, role');
+	const { data: people, error } = await supabaseClient
+		.from('profiles')
+		.select('id, name, role, photo_url, is_system_account, active_frame_url, active_tag');
 
-  if (error) {
-    console.error('Error cargando nombres de usuarios:', error);
-    return null;
-  }
+	if (error) { console.error('Error cargando nombres:', error); return null; }
 
-  peopleMap = {};
-  adminList = [];
-  people.forEach(p => {
-    peopleMap[p.id] = p.name;
-    if (p.role === 'admin' || p.role === 'ceo') adminList.push(p);
-  });
-  return people;
+	peopleMap = {};
+	peoplePhotoMap = {};
+	peopleFrameMap = {};
+	peopleTagMap = {};
+	adminList = [];
+	people.forEach(p => {
+		peopleMap[p.id] = p.name;
+		peoplePhotoMap[p.id] = p.photo_url || '/assets/userdefault.jpg';
+		peopleFrameMap[p.id] = p.active_frame_url || null;
+		peopleTagMap[p.id] = p.active_tag || null;
+		if (p.role === 'admin' || p.role === 'ceo') adminList.push(p);
+	});
+	return people;
 }
 
 async function loadEmployeesDropdowns() {
@@ -959,65 +1112,102 @@ async function loadEmployees() {
 }
 
 async function createTask() {
-  $('btn-create-task').disabled = true;
-  const title = document.getElementById('task-title').value;
-  const description = document.getElementById('task-desc').value;
-  const assigned_to = document.getElementById('task-assignee').value;
-  const fileInput = document.getElementById('task-file');
+	$('btn-create-task').disabled = true;
+	const title = document.getElementById('task-title').value;
+	const description = document.getElementById('task-desc').value;
+	const assigned_to = document.getElementById('task-assignee').value;
+	const deadline_set = document.getElementById('task-deadline').value;
+	const fileInput = document.getElementById('task-file');
 
-  let referenceFileUrl = null;
+	let referenceFileUrl = null;
 
-  if (fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    const filePath = `assignments/${Date.now()}-${file.name}`;
+	if (fileInput.files.length > 0) {
+		const file = fileInput.files[0];
+		const filePath = `assignments/${Date.now()}-${file.name}`;
 
-    const { error: uploadError } = await supabaseClient.storage
-      .from('task-files')
-      .upload(filePath, file);
+		const { error: uploadError } = await supabaseClient.storage
+			.from('task-files')
+			.upload(filePath, file);
 
-    if (uploadError) {
-      $('btn-create-task').disabled = false;
-      showMsgBox('error', 'Error', `Error al subir el archivo: ${uploadError.message}`, 'Cerrar');
-      return;
-    }
+		if (uploadError) {
+			$('btn-create-task').disabled = false;
+			showMsgBox('error', 'Error', `Error al subir el archivo: ${uploadError.message}`, 'Cerrar');
+			return;
+		}
 
-    const { data: urlData } = supabaseClient.storage.from('task-files').getPublicUrl(filePath);
-    referenceFileUrl = urlData.publicUrl;
+		const { data: urlData } = supabaseClient.storage.from('task-files').getPublicUrl(filePath);
+		referenceFileUrl = urlData.publicUrl;
+	}
+
+	const { error } = await supabaseClient.from('tasks').insert([
+		{
+			title,
+			description,
+			assigned_to,
+			created_by: currentUser.id,
+			status: 'pending',
+			reference_file_url: referenceFileUrl,
+			deadline: deadline_set || null
+		}
+	]);
+	$('btn-create-task').disabled = false;
+
+	if (error) {
+		showMsgBox('error', 'Error', `Error al crear la tarea: ${error.message}`, 'Cerrar');
+	} else {
+		document.getElementById('task-title').value = '';
+		document.getElementById('task-desc').value = '';
+		fileInput.value = '';
+		showMsgBox('success', 'Éxito!', 'Tarea asignada!', 'Cerrar');
+	}
+}
+
+async function loadMyUnusedExtensions() {
+  const { data } = await supabaseClient.from('store_purchases')
+    .select('*').eq('user_id', currentUser.id).eq('fulfilled', false)
+    .in('item_type_snapshot', ['extension_24h', 'extension_48h']);
+  return data || [];
+}
+
+async function useExtensionOnTask(taskId) {
+  const extensions = await loadMyUnusedExtensions();
+  if (extensions.length === 0) {
+    showMsgBox('error', 'Sin extensiones', 'No tienes extensiones disponibles. Cómpralas en la Tienda.', 'Cerrar');
+    return;
   }
 
-  const { error } = await supabaseClient.from('tasks').insert([
-    {
-      title,
-      description,
-      assigned_to,
-      created_by: currentUser.id,
-      status: 'pending',
-      reference_file_url: referenceFileUrl
-    }
-  ]);
-  $('btn-create-task').disabled = false;
+  const options = extensions.map(e => `${e.item_type_snapshot === 'extension_24h' ? '24h' : '48h'} (#${e.id.slice(0, 6)})`).join(', ');
+  const choice = await showPromptMsgBox('question', 'Usar Extensión', `Extensiones disponibles: ${options}. Escribe "24" o "48" para usar la primera de ese tipo.`, 'Usar', 'Cancelar');
+  if (!choice.confirmed) return;
 
-  if (error) {
-	showMsgBox('error', 'Error', `Error al crear la tarea: ${error.message}`, 'Cerrar');
-  } else {
-    document.getElementById('task-title').value = '';
-    document.getElementById('task-desc').value = '';
-    fileInput.value = '';
-    showMsgBox('success', 'Éxito!', 'Tarea asignada!', 'Cerrar');
-  }
+  const wanted = choice.value.trim() === '48' ? 'extension_48h' : 'extension_24h';
+  const match = extensions.find(e => e.item_type_snapshot === wanted);
+  if (!match) { showMsgBox('error', 'Error', 'No tienes ese tipo de extensión.', 'Cerrar'); return; }
+
+  const { data, error } = await supabaseClient.rpc('use_task_extension', { p_purchase_id: match.id, p_task_id: taskId });
+  if (error || !data.success) { showMsgBox('error', 'Error', data?.message || error?.message, 'Cerrar'); return; }
+
+  showMsgBox('success', 'Éxito!', 'Fecha límite extendida.', 'Cerrar');
+  loadTasks();
 }
 
 async function loadTasks() {
-  let query = supabaseClient.from('tasks').select('*');
+	let query = supabaseClient.from('tasks').select('*');
 
-  if (!['admin', 'ceo'].includes(userProfile.role)) {
-    query = query.eq('assigned_to', currentUser.id);
-  }
+	if (!['admin', 'ceo'].includes(userProfile.role)) {
+		query = query.eq('assigned_to', currentUser.id);
+	}
 
-  const { data: tasks, error } = await query;
-  if (error) return console.error(error);
+	const { data: tasks, error } = await query;
+	if (error) return console.error(error);
 
-  renderTasks(tasks);
+	const safeTasks = (tasks || []).filter(t =>
+		t.assigned_to === currentUser.id ||
+		t.created_by === currentUser.id ||
+		['admin', 'ceo'].includes(userProfile.role)
+	);
+
+	renderTasks(safeTasks);
 }
 
 function renderTasks(tasks) {
@@ -1029,25 +1219,46 @@ function renderTasks(tasks) {
     $('dashboard_widget_tasks').className = "widget status_ok";
     $('dashboard_widget_tasks').querySelector('.status').textContent = "Sin tareas pendientes";
     return;
-
-  } else if (tasks.length == 1) {
+  } else {
     $('dashboard_widget_tasks').className = "widget status_info";
-    $('dashboard_widget_tasks').querySelector('.status').textContent = "Tienes 1 tarea pendiente.";
-
-  } else if (tasks.length >= 1) {
-    $('dashboard_widget_tasks').className = "widget status_info";
-    $('dashboard_widget_tasks').querySelector('.status').textContent = `Tienes ${tasks.length} tareas pendientes.`;
-
+    $('dashboard_widget_tasks').querySelector('.status').textContent = 
+      tasks.length === 1 ? "Tienes 1 tarea pendiente." : `Tienes ${tasks.length} tareas pendientes.`;
   }
 
   tasks.forEach(task => {
     const div = document.createElement('div');
-    div.className = `task-card ${task.status}`;
-
     const isMine = task.assigned_to === currentUser.id;
     const isCreatedByMe = task.created_by === currentUser.id;
     const assigneeName = peopleMap[task.assigned_to] || 'Empleado';
     const creatorName = peopleMap[task.created_by] || 'Admin';
+
+    let formatedDeadline = "Sin fecha de entrega";
+    let tareaVencida = false;
+
+    if (task.deadline) {
+      const [year, month, day] = task.deadline.split('-');
+      const dateObj = new Date(year, month - 1, day);
+
+      formatedDeadline = `Entrega: ${dateObj.toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })}`;
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      
+      if (dateObj < hoy && task.status !== 'completed') {
+        tareaVencida = true;
+      }
+    }
+
+    let visibleTaskStatus = task.status;
+    if (tareaVencida) {
+      visibleTaskStatus = "Vencida";
+    }
+
+    div.className = `task-card ${task.status} ${tareaVencida ? 'vencida' : ''}`;
 
     const assignedByLabel = isCreatedByMe
       ? `<span class="assigned-by">Asignada por Usted</span>`
@@ -1063,57 +1274,130 @@ function renderTasks(tasks) {
       ? 'Ver mi Archivo Enviado'
       : `Ver Archivo de ${assigneeName}`;
 
+    const showUploadSection = task.status === 'pending' && isMine;
+    
     div.innerHTML = `
-		<div class="top_wrapper">
-			<i class="fi fi-sr-note"></i>
-			<span class="title">${task.title}</span>
-			${assignedByLabel}
-			${submittedByLabel}
-			<p>Estado: <strong>${task.status}</strong></p>
-		</div>
-		${!isMine ? `<p class="assigned-to"><small>Asignado a: ${assigneeName}</small></p>` : ''}
-		<p>${task.description || ''}</p>
-		${task.reference_file_url ? `<p><a href="${task.reference_file_url}" target="_blank">Ver Archivo de Referencia</a></p>` : ''}
-		${task.file_url ? `<p><a href="#" onclick="taskOpenFilePreview('${task.file_url}')">${fileLinkLabel}</a></p>` : ''}
+        <div class="top_wrapper">
+            <i class="fi fi-sr-note"></i>
+            <span class="title">${task.title}</span>
+            ${assignedByLabel}
+            ${submittedByLabel}
+            <span>${formatedDeadline}</span>
+			${task.due_date ? `<p><small>Fecha límite: ${new Date(task.due_date).toLocaleString()}</small></p>` : ''}
+            <p>Estado: <strong>${visibleTaskStatus}</strong></p>
+        </div>
+        ${!isMine ? `<p class="assigned-to"><small>Asignado a: ${assigneeName}</small></p>` : ''}
+        <p>${task.description || ''}</p>
+        ${task.reference_file_url ? `<p><a href="${task.reference_file_url}" target="_blank">Ver Archivo de Referencia</a></p>` : ''}
+        ${task.file_url ? `<p><a href="#" onclick="taskOpenFilePreview('${task.file_url}')">${fileLinkLabel}</a></p>` : ''}
 
-		<div class="bottom_wrapper">
-			${task.status === 'pending' && isMine ? `
-			<input type="file" id="file-${task.id}">
-			<button onclick="uploadFileAndComplete('${task.id}')" id="taskButton_${task.id}"><i class="fi fi-br-check"></i> Enviar Tarea</button>
-			` : ''}
-		</div>
-	`;
+        <div class="bottom_wrapper">
+            ${showUploadSection ? `
+              <input type="file" id="file-${task.id}" ${tareaVencida ? 'disabled' : ''}>
+			  ${task.status === 'pending' && isMine ? `<button class="btnsmall" onclick="useExtensionOnTask('${task.id}')"><i class="fi fi-rr-time-add"></i></button>` : ''}
+              <button 
+                onclick="${tareaVencida ? '' : `uploadFileAndComplete('${task.id}')`}" 
+                id="taskButton_${task.id}"
+                ${tareaVencida ? 'disabled data-tooltip="No puedes entregar tareas después de la fecha de entrega"' : ''}
+              >
+                <i class="fi fi-br-check"></i> ${tareaVencida ? 'Plazo Vencido' : 'Enviar Tarea'}
+              </button>
+            ` : ''}
+        </div>
+    `;
+
     container.appendChild(div);
   });
 }
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let pdfDoc = null;
+let pdfCurrentPage = 1;
+let pdfScale = 1.2;
+
 function taskOpenFilePreview(file) {
 	const urlLimpia = file.split('?')[0];
 	const extension = urlLimpia.split('.').pop().toLowerCase();
+
+	$('filePreview').querySelector('.preview').querySelector('.pdfViewerWrapper').classList.add('hidden');
+
 	if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(extension)) {
 		$('filePreview').querySelector('.preview').querySelector('img').classList.remove('hidden');
 		$('filePreview').querySelector('.preview').querySelector('iframe').classList.add('hidden');
-    $('filePreview').classList.remove('hidden');
-    setTimeout(() => {
-		    $('filePreview').querySelector('.preview').querySelector('img').src = file;
-    }, 100);
+		$('filePreview').classList.remove('hidden');
+		setTimeout(() => {
+			$('filePreview').querySelector('.preview').querySelector('img').src = file;
+		}, 100);
 
 	} else if (extension === 'pdf') {
-		$('filePreview').querySelector('.preview').querySelector('iframe').classList.remove('hidden');
 		$('filePreview').querySelector('.preview').querySelector('img').classList.add('hidden');
-    $('filePreview').classList.remove('hidden');
-    setTimeout(() => {
-		    $('filePreview').querySelector('.preview').querySelector('iframe').src = file;
-    }, 100);
+		$('filePreview').querySelector('.preview').querySelector('iframe').classList.add('hidden');
+		renderPdfViewer(file);
 
 	} else {
 		window.open(file);
 	}
 }
 
+async function renderPdfViewer(url) {
+	$('filePreview').querySelector('.preview').querySelector('.pdfViewerWrapper').classList.remove('hidden');
+	$('filePreview').classList.remove('hidden');
+	$('filePreview').querySelector('.loading').classList.remove('hidden');
+
+	try {
+		pdfDoc = await pdfjsLib.getDocument(url).promise;
+		pdfCurrentPage = 1;
+		pdfScale = 1.2;
+		$('pdfPageCount').textContent = pdfDoc.numPages;
+		await renderPdfPage(pdfCurrentPage);
+	} catch (e) {
+		console.error('Error cargando PDF:', e);
+		$('filePreview').querySelector('.loading').classList.add('hidden');
+		showMsgBox('error', 'Error', 'No se pudo cargar el PDF.', 'Cerrar');
+	}
+}
+
+async function renderPdfPage(num) {
+	const page = await pdfDoc.getPage(num);
+	const canvas = $('pdfCanvas');
+	const ctx = canvas.getContext('2d');
+	const viewport = page.getViewport({ scale: pdfScale });
+	canvas.width = viewport.width;
+	canvas.height = viewport.height;
+
+	await page.render({ canvasContext: ctx, viewport }).promise;
+
+	$('pdfPageNum').textContent = num;
+	$('pdfPrevBtn').disabled = num <= 1;
+	$('pdfNextBtn').disabled = num >= pdfDoc.numPages;
+	$('filePreview').querySelector('.loading').classList.add('hidden');
+}
+
+function pdfPrevPage() {
+	if (!pdfDoc || pdfCurrentPage <= 1) return;
+	pdfCurrentPage--;
+	renderPdfPage(pdfCurrentPage);
+}
+function pdfNextPage() {
+	if (!pdfDoc || pdfCurrentPage >= pdfDoc.numPages) return;
+	pdfCurrentPage++;
+	renderPdfPage(pdfCurrentPage);
+}
+function pdfZoomIn() {
+	pdfScale = Math.min(pdfScale + 0.2, 3);
+	if (pdfDoc) renderPdfPage(pdfCurrentPage);
+}
+function pdfZoomOut() {
+	pdfScale = Math.max(pdfScale - 0.2, 0.4);
+	if (pdfDoc) renderPdfPage(pdfCurrentPage);
+}
+
 $('filePreview').addEventListener('pointerdown', () => {
 	$('filePreview').querySelector('.preview').querySelector('iframe').src = '';
 	$('filePreview').querySelector('.preview').querySelector('img').src = '';
+	$('filePreview').querySelector('.preview').querySelector('.pdfViewerWrapper').classList.add('hidden');
+	pdfDoc = null;
 	$('filePreview').querySelector('.loading').classList.remove('hidden');
 	$('filePreview').classList.add('hidden');
 });
@@ -1171,7 +1455,7 @@ window.uploadFileAndComplete = async (taskId) => {
     return;
   }
   if (!data || data.length === 0) {
-    showMsgBox('error', 'Error', 'No se pudo entregar la tarea (posible bloqueo de permisos).', 'Cerrar');
+    showMsgBox('error', 'Error', 'No se pudo entregar la tarea (error interno del servidor, por favor reporte este error).', 'Cerrar');
     return;
   }
 
@@ -1204,19 +1488,64 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 //=================================
 // Login Frequency
 //=================================
+async function updateLoginStreak() {
+	const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+	const { data: current } = await supabaseClient
+		.from('profiles')
+		.select('login_streak, last_login_date, cat_points')
+		.eq('id', currentUser.id)
+		.single();
+
+	if (!current) return;
+
+	if (current.last_login_date === today) return;
+
+	const yesterday = new Date();
+	yesterday.setDate(yesterday.getDate() - 1);
+	const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+	let newStreak = 1;
+	if (current.last_login_date === yesterdayStr) {
+		newStreak = (current.login_streak || 0) + 1;
+	}
+
+	let bonusPoints = 0;
+	if (newStreak % 7 === 0) {
+		bonusPoints = 100;
+	}
+
+	const { error } = await supabaseClient
+		.from('profiles')
+		.update({
+		login_streak: newStreak,
+		last_login_date: today,
+		cat_points: current.cat_points + bonusPoints
+		})
+		.eq('id', currentUser.id);
+
+	if (!error) {
+		userProfile.login_streak = newStreak;
+		userProfile.cat_points = current.cat_points + bonusPoints;
+		if (bonusPoints > 0) {
+		showMsgBox('success', 'Racha de 7 días', `Has iniciado sesión 7 días seguidos. +${bonusPoints} CatPoints!`, 'Genial!');
+		}
+	}
+}
+
 function recordLoginTimestamp(userId) {
-  const key = `loginHistory_${userId}`;
-  let history = [];
-  try {
-    history = JSON.parse(localStorage.getItem(key)) || [];
-  } catch (e) {
-    history = [];
-  }
-  history.push(Date.now());
-  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-  history = history.filter(ts => Date.now() - ts <= THIRTY_DAYS);
-  localStorage.setItem(key, JSON.stringify(history));
-  return history;
+	const key = `loginHistory_${userId}`;
+	let history = [];
+	try {
+		history = JSON.parse(localStorage.getItem(key)) || [];
+	} catch (e) {
+		history = [];
+	}
+	history.push(Date.now());
+	const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+	history = history.filter(ts => Date.now() - ts <= THIRTY_DAYS);
+	localStorage.setItem(key, JSON.stringify(history));
+	return history;
 }
 
 function getLoginFrequencyInfo(userId) {
@@ -1240,39 +1569,49 @@ function getLoginFrequencyInfo(userId) {
 // Account Status
 //=================================
 async function loadMyAccountStatus() {
-  const { data: strikes, error: strikesError } = await supabaseClient
-    .from('strikes')
-    .select('*')
-    .eq('employee_id', currentUser.id)
-    .order('created_at', { ascending: false });
+	$('catPointsValue').textContent = userProfile.cat_points ?? 10;
+	$('loginStreakValue').textContent = userProfile.login_streak ?? 0;
 
-  const { data: tasks, error: tasksError } = await supabaseClient
-    .from('tasks')
-    .select('id, status')
-    .eq('assigned_to', currentUser.id);
+	const isBirthday = await checkBirthdays();
 
-  if (strikesError || tasksError) {
-    console.error('Error cargando estado de cuenta:', strikesError, tasksError);
-    return;
-  }
+	const { data: strikes, error: strikesError } = await supabaseClient
+		.from('strikes')
+		.select('*')
+		.eq('employee_id', currentUser.id)
+		.order('created_at', { ascending: false });
 
-  const strikeCount = strikes.length;
-  const pendingCount = tasks.filter(t => t.status === 'pending').length;
-  const frequency = getLoginFrequencyInfo(currentUser.id);
+	const { data: tasks, error: tasksError } = await supabaseClient
+		.from('tasks')
+		.select('id, status')
+		.eq('assigned_to', currentUser.id);
 
-  if (strikeCount <= 0) {
-	$('dashboard_widget_brief').className = "widget status_ok";
-	$('dashboard_widget_brief').querySelector('.status').textContent = "Todo correcto por aqui!";
-  } else if (strikeCount == 1) {
-	$('dashboard_widget_brief').className = "widget status_warn";
-	$('dashboard_widget_brief').querySelector('.status').textContent = "Tienes 1 Strike";
-  } else if (strikeCount >= 1) {
-	$('dashboard_widget_brief').className = "widget status_warn";
-	$('dashboard_widget_brief').querySelector('.status').textContent = "Tienes varios strikes!";
-  }
+	if (strikesError || tasksError) {
+		console.error('Error cargando estado de cuenta:', strikesError, tasksError);
+		return;
+	}
 
-  renderMyStrikesList(strikes);
-  renderAccountBrief(strikeCount, pendingCount, frequency);
+	const strikeCount = strikes.length;
+	const pendingCount = tasks.filter(t => t.status === 'pending').length;
+	const frequency = getLoginFrequencyInfo(currentUser.id);
+
+	if (!isBirthday) {
+		if (strikeCount <= 0) {
+			$('dashboard_widget_brief').className = "widget status_ok";
+			$('dashboard_widget_brief').querySelector('.status').textContent = "Todo correcto por aqui!";
+			$('dashboard_widget_brief').querySelector('.gotoStrikesBtn').classList.add('hidden');
+		} else if (strikeCount == 1) {
+			$('dashboard_widget_brief').className = "widget status_warn";
+			$('dashboard_widget_brief').querySelector('.status').textContent = "Tienes 1 Strike";
+			$('dashboard_widget_brief').querySelector('.gotoStrikesBtn').classList.remove('hidden');
+		} else if (strikeCount >= 1) {
+			$('dashboard_widget_brief').className = "widget status_warn";
+			$('dashboard_widget_brief').querySelector('.status').textContent = "Tienes varios strikes!";
+			$('dashboard_widget_brief').querySelector('.gotoStrikesBtn').classList.remove('hidden');
+		}
+	}
+
+	renderMyStrikesList(strikes);
+	renderAccountBrief(strikeCount, pendingCount, frequency);
 }
 
 function renderMyStrikesList(strikes) {
@@ -1298,9 +1637,22 @@ function renderMyStrikesList(strikes) {
     btn.textContent = 'Mas Información';
     btn.onclick = () => showMsgBox('info', strike.short_reason, strike.detailed_reason, 'Cerrar');
 
+	const btnAppeal = document.createElement('button');
+	btnAppeal.className = "btn_secondary";
+    btnAppeal.textContent = 'Apelar';
+    btnAppeal.onclick = () => {
+		gotoPage('requests');
+		setTimeout(() => {sendRequest('Apelar Strike');}, 500);
+	};
+
+	const btnsWrapper = document.createElement('div');
+	btnsWrapper.className = "btns_wrapper";
+	btnsWrapper.appendChild(btnAppeal);
+	btnsWrapper.appendChild(btn);
+
     div.appendChild(icon);
     div.appendChild(span);
-    div.appendChild(btn);
+    div.appendChild(btnsWrapper);
     container.appendChild(div);
   });
 }
@@ -1381,7 +1733,7 @@ async function updateEmployeeUsername() {
     return;
   }
   if (!data || data.length === 0) {
-    showMsgBox('error', 'Error', 'No se pudo guardar (posible bloqueo de permisos).', 'Cerrar');
+    showMsgBox('error', 'Error', 'No se pudo guardar (error interno del servidor, por favor reporte este error).', 'Cerrar');
     return;
   }
   showMsgBox('success', 'Éxito!', 'Usuario actualizado.', 'Cerrar');
@@ -1389,46 +1741,48 @@ async function updateEmployeeUsername() {
 }
 
 async function loadEmployeeManagement() {
-  const employeeId = $('manage-employee-select').value;
-  if (!employeeId) return;
+	const employeeId = $('manage-employee-select').value;
+	if (!employeeId) return;
 
-  $('loadingModal').classList.remove('hidden');
-  $('loadingModal').querySelector('span').textContent = "Cargando...";
+	$('loadingModal').classList.remove('hidden');
+	$('loadingModal').querySelector('span').textContent = "Cargando...";
 
-  const { data: profile, error: profileError } = await supabaseClient
-    .from('profiles')
-    .select('*')
-    .eq('id', employeeId)
-    .single();
+	const { data: profile, error: profileError } = await supabaseClient
+		.from('profiles')
+		.select('*')
+		.eq('id', employeeId)
+		.single();
 
-  const { data: strikes, error: strikesError } = await supabaseClient
-    .from('strikes')
-    .select('*')
-    .eq('employee_id', employeeId)
-    .order('created_at', { ascending: false });
+	const { data: strikes, error: strikesError } = await supabaseClient
+		.from('strikes')
+		.select('*')
+		.eq('employee_id', employeeId)
+		.order('created_at', { ascending: false });
 
-  $('loadingModal').classList.add('hidden');
+	$('loadingModal').classList.add('hidden');
 
-  if (profileError || strikesError) {
-    showMsgBox('error', 'Error', 'No se pudo cargar la información del empleado.', 'Cerrar');
-    return;
-  }
+	if (profileError || strikesError) {
+		showMsgBox('error', 'Error', 'No se pudo cargar la información del empleado.', 'Cerrar');
+		return;
+	}
 
-  currentManagedEmployee = profile;
-  $('employeeManagementPanel').classList.remove('hidden');
-  $('manage-employee-name').textContent = profile.name;
-  $('manage-username-input').value = profile.username || '';
+	currentManagedEmployee = profile;
+	$('employeeManagementPanel').classList.remove('hidden');
+	$('manage-employee-name').textContent = profile.name;
+	$('manage-username-input').value = profile.username || '';
 
-  renderBanStatus(profile);
-  renderManagedStrikesList(strikes);
-  $('working-areas-input').value = (profile.working_areas || []).join(', ');
+	renderBanStatus(profile);
+	renderManagedStrikesList(strikes);
+	$('working-areas-input').value = (profile.working_areas || []).join(', ');
 
-  if (userProfile.role === 'ceo') {
-    loadEmployeeIdentification(employeeId);
-    $('current-cid-display').textContent = profile.current_cid || 'Ninguno';
-    renderCidQr(profile.current_cid);
-    loadIdCardsHistory(employeeId);
-  }
+	if (userProfile.role === 'ceo') {
+		loadEmployeeIdentification(employeeId);
+		$('current-cid-display').textContent = profile.current_cid || 'Ninguno';
+		renderCidQr(profile.current_cid);
+		loadIdCardsHistory(employeeId);
+	}
+
+	$('manage-catpoints-display').textContent = profile.cat_points ?? 10;
 }
 
 function renderBanStatus(profile) {
@@ -1525,7 +1879,7 @@ async function addStrike() {
     return;
   }
   if (!data || data.length === 0) {
-    showMsgBox('error', 'Error', 'No se pudo agregar el strike (posible bloqueo de permisos).', 'Cerrar');
+    showMsgBox('error', 'Error', 'No se pudo agregar el strike (error interno del servidor, por favor reporte este error).', 'Cerrar');
     return;
   }
 
@@ -1585,7 +1939,7 @@ async function banEmployee() {
     return;
   }
   if (!data || data.length === 0) {
-    showMsgBox('error', 'Error', 'No se pudo banear (posible bloqueo de permisos).', 'Cerrar');
+    showMsgBox('error', 'Error', 'No se pudo banear (error interno del servidor, por favor reporte este error).', 'Cerrar');
     return;
   }
 
@@ -1617,7 +1971,7 @@ async function unbanEmployee() {
     return;
   }
   if (!data || data.length === 0) {
-    showMsgBox('error', 'Error', 'No se pudo quitar el baneo (posible bloqueo de permisos).', 'Cerrar');
+    showMsgBox('error', 'Error', 'No se pudo quitar el baneo (error interno del servidor, por favor reporte este error).', 'Cerrar');
     return;
   }
 
@@ -1760,11 +2114,12 @@ async function sendRequest(typeLabel) {
     return;
   }
   if (!data || data.length === 0) {
-    showMsgBox('error', 'Error', 'No se pudo enviar la solicitud (posible bloqueo de permisos).', 'Cerrar');
+    showMsgBox('error', 'Error', 'No se pudo enviar la solicitud (error interno del servidor, por favor reporte este error).', 'Cerrar');
     return;
   }
 
-  showMsgBox('success', 'Enviada', 'Tu solicitud fue enviada.', 'Cerrar');
+  showMsgBox('success', 'Enviada', 'Tu solicitud fue enviada. +10 CatPoints a tu cuenta', 'Cerrar');
+  addCatPoints(10, 'Solicitud enviada');
   loadMyRequests();
 }
 
@@ -1852,7 +2207,7 @@ async function resolveRequest(requestId, newStatus) {
     return;
   }
   if (!data || data.length === 0) {
-    showMsgBox('error', 'Error', 'No se pudo actualizar (posible bloqueo de permisos).', 'Cerrar');
+    showMsgBox('error', 'Error', 'No se pudo actualizar (error interno del servidor, por favor reporte este error).', 'Cerrar');
     return;
   }
   showMsgBox('success', 'Éxito!', `Solicitud ${newStatus === 'approved' ? 'aceptada' : 'rechazada'}.`, 'Cerrar');
@@ -2304,50 +2659,71 @@ async function createAnnouncement() {
 }
 
 async function loadAnnouncements() {
-  const { data: announcements, error } = await supabaseClient
-    .from('announcements')
-    .select('*')
-    .order('created_at', { ascending: false });
+	const { data: announcements, error } = await supabaseClient
+		.from('announcements').select('*').order('created_at', { ascending: false });
+	if (error) { console.error(error); return; }
 
-  if (error) { console.error(error); return; }
-  renderAnnouncements(announcements);
+	const { data: likes } = await supabaseClient.from('announcement_likes').select('*');
+
+	renderAnnouncements(announcements, likes || []);
 }
 
-function renderAnnouncements(announcements) {
-  const container = $('announcements-list');
-  container.innerHTML = '';
+function renderAnnouncements(announcements, likes) {
+	const container = $('announcements-list');
+	container.innerHTML = '';
+	if (!announcements || announcements.length === 0) {
+		container.innerHTML = '<span>No hay novedades publicadas.</span>';
+		return;
+	}
+	const isAdmin = ['admin', 'ceo'].includes(userProfile.role);
 
-  if (!announcements || announcements.length === 0) {
-    container.innerHTML = '<span>No hay novedades publicadas.</span>';
-    return;
-  }
+	announcements.forEach(a => {
+		const likesForThis = likes.filter(l => l.announcement_id === a.id);
+		const likedByMe = likesForThis.some(l => l.user_id === currentUser.id);
 
-  const isAdmin = ['admin', 'ceo'].includes(userProfile.role);
+		const div = document.createElement('div');
+		div.className = 'announcement-card';
+		div.innerHTML = `
+			${a.image_url ? `<div class="announcement-image" style="background-image: url('${a.image_url}')"></div>` : ''}
+			<h4>${a.title}</h4>
+			<span class="announcement-body">${a.body}</span>
+			<button id="announcementLikeBtn_${a.id}" class="like-btn ${likedByMe ? 'liked' : ''}" onclick="toggleAnnouncementLike('${a.id}', ${likedByMe})">
+				<i class="fi ${likedByMe ? 'fi-sr-heart' : 'fi-rr-heart'}"></i> ${likesForThis.length}
+			</button>
+			${isAdmin ? `<button class="btnsmall" onclick="deleteAnnouncement('${a.id}')"><i class="fi fi-rr-trash"></i></button>` : ''}
+		`;
+		container.appendChild(div);
+	});
+}
 
-  announcements.forEach(a => {
-    const div = document.createElement('div');
-    div.className = 'announcement-card';
-    div.innerHTML = `
-      ${a.image_url ? `<div class="announcement-image" style="background-image: url('${a.image_url}')"></div>` : ''}
-      <h4>${a.title}</h4>
-      <span class="announcement-body">${a.body}</span>
-      ${isAdmin ? `<button class="btnsmall" onclick="deleteAnnouncement('${a.id}')"><i class="fi fi-rr-trash"></i></button>` : ''}
-    `;
-    container.appendChild(div);
-  });
+async function toggleAnnouncementLike(announcementId, alreadyLiked) {
+	if (alreadyLiked) {
+		try {
+			$(`announcementLikeBtn_${announcementId}`).classList.remove('liked');
+			$(`announcementLikeBtn_${announcementId}`).querySelector('i').className = "fi fi-rr-heart";
+		} catch(e) {}
+		await supabaseClient.from('announcement_likes').delete().eq('user_id', currentUser.id).eq('announcement_id', announcementId);
+	} else {
+		try {
+			$(`announcementLikeBtn_${announcementId}`).classList.add('liked');
+			$(`announcementLikeBtn_${announcementId}`).querySelector('i').className = "fi fi-sr-heart";
+		} catch(e) {}
+		await supabaseClient.from('announcement_likes').insert([{ user_id: currentUser.id, announcement_id: announcementId }]);
+	}
+	loadAnnouncements();
 }
 
 async function deleteAnnouncement(id) {
-  const confirmMsg = await showPromptMsgBox('warn', 'Confirmar', 'Escribe "BORRAR" para eliminar esta novedad.', 'Eliminar', 'Cancelar');
-  if (!confirmMsg.confirmed || confirmMsg.value !== 'BORRAR') return;
+	const confirmMsg = await showPromptMsgBox('warn', 'Confirmar', 'Escribe "BORRAR" para eliminar esta novedad.', 'Eliminar', 'Cancelar');
+	if (!confirmMsg.confirmed || confirmMsg.value !== 'BORRAR') return;
 
-  const { error } = await supabaseClient.from('announcements').delete().eq('id', id);
-  if (error) {
-    showMsgBox('error', 'Error', `No se pudo eliminar: ${error.message}`, 'Cerrar');
-    return;
-  }
-  showMsgBox('success', 'Éxito!', 'Novedad eliminada.', 'Cerrar');
-  loadAnnouncements();
+	const { error } = await supabaseClient.from('announcements').delete().eq('id', id);
+	if (error) {
+		showMsgBox('error', 'Error', `No se pudo eliminar: ${error.message}`, 'Cerrar');
+		return;
+	}
+	showMsgBox('success', 'Éxito!', 'Novedad eliminada.', 'Cerrar');
+	loadAnnouncements();
 }
 
 async function loadLatestAnnouncementWidget() {
@@ -2477,24 +2853,26 @@ function renderSearchResults(results) {
 // Stats
 //=================================
 async function loadStatsPage() {
-  const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+	const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: activity, error } = await supabaseClient
-    .from('activity_log')
-    .select('user_id, event_type, page, created_at')
-    .gte('created_at', THIRTY_DAYS_AGO);
+	const { data: activity, error } = await supabaseClient
+		.from('activity_log')
+		.select('user_id, event_type, page, created_at')
+		.gte('created_at', THIRTY_DAYS_AGO);
 
-  if (error) { console.error(error); return; }
+	if (error) { console.error(error); return; }
 
-  const logins = activity.filter(a => a.event_type === 'login');
-  const pageViews = activity.filter(a => a.event_type === 'page_view');
+	const logins = activity.filter(a => a.event_type === 'login');
+	const pageViews = activity.filter(a => a.event_type === 'page_view');
 
-  $('stat-total-logins').textContent = logins.length;
-  $('stat-total-pageviews').textContent = pageViews.length;
+	$('stat-total-logins').textContent = logins.length;
+	$('stat-total-pageviews').textContent = pageViews.length;
 
-  renderTopPages(pageViews);
-  renderLoginsByUser(logins);
-  await renderSecurityStatus();
+	renderTopPages(pageViews);
+	renderLoginsByUser(logins);
+	renderStatsBreakdown(activity, 'stats-devices', 'device_type');
+	renderStatsBreakdown(activity, 'stats-os', 'os_name');
+	await renderSecurityStatus();
 }
 
 function renderTopPages(pageViews) {
@@ -2737,7 +3115,8 @@ async function sendFeedback() {
     return;
   }
   $('feedback-message').value = '';
-  showMsgBox('success', 'Éxito!', 'Gracias por tu feedback!', 'Cerrar');
+  showMsgBox('success', 'Éxito!', 'Gracias por tu feedback! +10 CatPoints a tu cuenta', 'Cerrar');
+  addCatPoints(10, 'Feedback enviado');
 }
 
 async function loadFeedbackList() {
@@ -3132,33 +3511,132 @@ async function loadMyIdentification() {
   }
 })();
 
+function getNameAndSecondName(fullName) {
+  if (!fullName) return { name: '', secondName: '' };
+
+  const parts = fullName.trim().split(/\s+/);
+  const name = parts.shift() || '';
+  const secondName = parts.join(' ');
+
+  return { name, secondName };
+}
+
 async function lookupCid(cid) {
-  const body = $('cidLookupBody');
-  body.innerHTML = '<span>Verificando ID...</span>';
+	const body = $('cidLookupBody');
+	body.innerHTML = '<span>Verificando ID...</span>';
 
-  const { data, error } = await supabaseClient.rpc('lookup_id_card_public', { p_cid: cid });
+	const { data, error } = await supabaseClient.rpc('lookup_id_card_public', { p_cid: cid });
 
-  if (error || !data) {
-    body.innerHTML = `<i class="fi fi-rr-triangle-warning"></i><h2>Error</h2><span>No se pudo verificar este ID en este momento.</span>`;
-    return;
-  }
+	if (error || !data) {
+		body.innerHTML = `<i class="fi fi-rr-triangle-warning"></i><h2>Error</h2><span>No se pudo verificar este ID en este momento.</span>`;
+		return;
+	}
 
-  if (data.status === 'not_found') {
-    body.innerHTML = `<i class="fi fi-rr-triangle-warning"></i><h2>ID no encontrado</h2><span>Este código no corresponde a ningún ID de BreadNet.</span>`;
-  } else if (data.status === 'lost' || data.status === 'stolen') {
-    body.innerHTML = `<i class="fi fi-rr-ban"></i><h2>ID ${data.status === 'lost' ? 'Perdido' : 'Robado'}</h2><span>Este ID ha sido reportado como ${data.status === 'lost' ? 'perdido' : 'robado'} y ya no es válido. Por favor, entrégalo al departamento de sistemas de Just A Bread Studios.</span>`;
-  } else if (data.status === 'active') {
-    body.innerHTML = `
-      <img src="${data.photo_url || '/assets/userdefault.jpg'}" class="cidLookupPhoto">
-      <h2>${data.name}</h2>
-      <span><i class="fi fi-rr-envelope"></i> ${data.email || 'No disponible'}</span>
-      <span><i class="fi fi-rr-phone-call"></i> ${data.phone_number || 'No disponible'}</span>
-      ${data.working_areas && data.working_areas.length ? `<span><i class="fi fi-rr-briefcase"></i> ${data.working_areas.join(', ')}</span>` : ''}
-      <p class="cidLookupValidBadge"><i class="fi fi-br-check"></i> ID Vigente</p>
-    `;
-  } else {
-    body.innerHTML = `<span>Estado desconocido.</span>`;
-  }
+	if (data.status === 'not_found') {
+		body.innerHTML = `<i class="fi fi-rr-triangle-warning"></i><h2>ID no encontrado</h2><span>Este código no corresponde a ningún ID de BreadNet.</span>`;
+	} else if (data.status === 'lost' || data.status === 'stolen') {
+		body.innerHTML = `<i class="fi fi-rr-ban"></i><h2>ID ${data.status === 'lost' ? 'Perdido' : 'Robado'}</h2><span>Este ID ha sido reportado como ${data.status === 'lost' ? 'perdido' : 'robado'} y ya no es válido. Por favor, entrégalo al departamento de sistemas de Just A Bread Studios.</span>`;
+	} else if (data.status === 'active') {
+        const renderEmail = (email) => email ? `<a href="mailto:${email}">${email}</a>` : 'No disponible';
+        const renderPhone = (phone) => phone ? `<a href="tel:+506${phone}">${phone}</a>` : 'No disponible';
+        
+        body.innerHTML = `
+        <img src="${data.photo_url || '/assets/userdefault.jpg'}" class="cidLookupPhoto">
+        <h2>${data.name}</h2>
+        <span><i class="fi fi-rr-envelope"></i> ${renderEmail(data.email)}</span>
+        <span><i class="fi fi-rr-phone-call"></i> ${renderPhone(data.phone_number)}</span>
+        ${data.working_areas && data.working_areas.length ? `<span><i class="fi fi-rr-briefcase"></i> ${data.working_areas.join(', ')}</span>` : ''}
+        <p class="cidLookupValidBadge"><i class="fi fi-br-check"></i> ID Vigente</p>
+        <button id="cidLookupSaveBtn">Agregar a contactos</button>
+        `;
+
+        $('cidLookupSaveBtn').onclick = async () => {
+			$('cidLookupSaveBtn').disabled = true;
+			$('cidLookupSaveBtn').textContent = "Agregando...";
+
+            const parsedName = getNameAndSecondName(data.name);
+            await saveContactToDevice({
+                nombre: parsedName.name,
+                apellido: parsedName.secondName,
+                empresa: 'Just A Bread Studios',
+                puesto: data.working_areas && data.working_areas.length ? data.working_areas.join(', ') : '',
+                telefono: data.phone_number ? `+506${data.phone_number}` : '',
+                email: data.email || '',
+                url: `https://justabreadstudios.netlify.app/breadnet/?cid=${cid}`
+            });
+
+			$('cidLookupSaveBtn').disabled = false;
+			$('cidLookupSaveBtn').textContent = "Agregar a contactos";
+        };
+    } else {
+		body.innerHTML = `<span>Estado desconocido.</span>`;
+	}
+}
+
+async function saveContactToDevice(data) {
+	const vcardText = [
+		'BEGIN:VCARD',
+		'VERSION:3.0',
+		`N:${data.apellido || ''};${data.nombre || ''};;;`,
+		`FN:${data.nombre || ''} ${data.apellido || ''}`.trim(),
+		data.empresa ? `ORG:${data.empresa}` : null,
+		data.puesto ? `TITLE:${data.puesto}` : null,
+		data.telefono ? `TEL;TYPE=CELL:${data.telefono}` : null,
+		data.email ? `EMAIL;TYPE=INTERNET:${data.email}` : null,
+		data.url ? `URL:${data.url}` : null,
+		'END:VCARD'
+	]
+	.filter(Boolean)
+	.join('\r\n');
+
+	const fileName = `${(data.nombre || 'contacto').toLowerCase().replace(/\s+/g, '_')}.vcf`;
+
+	if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+		try {
+			const file = new File([vcardText], fileName, { type: 'text/vcard' });
+
+			if (navigator.canShare({ files: [file] })) {
+				await navigator.share({
+					files: [file],
+					title: data.nombre ? `Contacto: ${data.nombre}` : 'Contacto',
+					text: 'Guardar contacto en la agenda'
+				});
+				return;
+			}
+		} catch (error) {
+			if (error.name === 'AbortError') {
+				return;
+			}
+			console.warn('Web Share API failed. Executing download fallback.', error);
+		}
+	}
+
+	executeDirectVCardDownload(vcardText, fileName);
+}
+
+function executeDirectVCardDownload(vcardText, fileName) {
+	const blob = new Blob([vcardText], { type: 'text/x-vcard;charset=utf-8' });
+
+	if (window.URL && window.URL.createObjectURL) {
+		const url = window.URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		
+		link.href = url;
+		link.download = fileName;
+		link.style.display = 'none';
+		
+		document.body.appendChild(link);
+		link.click();
+
+		setTimeout(() => {
+		document.body.removeChild(link);
+		window.URL.revokeObjectURL(url);
+		}, 200);
+		return;
+	}
+
+	const encodedUrl = 'data:text/x-vcard;charset=utf-8,' + encodeURIComponent(vcardText);
+	window.open(encodedUrl, '_blank');
 }
 
 //=================================
@@ -3325,4 +3803,1017 @@ async function saveWorkingAreas() {
   }
   currentManagedEmployee.working_areas = areas;
   showMsgBox('success', 'Éxito!', 'Áreas de trabajo actualizadas.', 'Cerrar');
+}
+
+//=================================
+// Device Detection
+//=================================
+	function detectDeviceInfo() {
+	const ua = navigator.userAgent;
+	let deviceType = 'desktop';
+	let osName = 'Desconocido';
+	let browserName = 'Desconocido';
+
+	if (/iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+		deviceType = 'tablet';
+		osName = 'iPadOS';
+	} else if (/iPhone|iPod/.test(ua)) {
+		deviceType = 'mobile';
+		osName = 'iOS';
+	} else if (/Android/.test(ua)) {
+		deviceType = /Mobile/.test(ua) ? 'mobile' : 'tablet';
+		osName = 'Android';
+	} else if (/Windows/.test(ua)) {
+		osName = 'Windows';
+	} else if (/Macintosh|Mac OS X/.test(ua)) {
+		osName = 'macOS';
+	} else if (/Linux/.test(ua)) {
+		osName = 'Linux';
+	}
+
+	if (/Edg\//.test(ua)) browserName = 'Edge';
+	else if (/OPR\//.test(ua)) browserName = 'Opera';
+	else if (/Chrome\//.test(ua)) browserName = 'Chrome';
+	else if (/Safari\//.test(ua) && !/Chrome/.test(ua)) browserName = 'Safari';
+	else if (/Firefox\//.test(ua)) browserName = 'Firefox';
+
+	return { deviceType, osName, browserName };
+}
+
+function renderStatsBreakdown(activity, containerId, key) {
+  const counts = {};
+  activity.forEach(a => {
+    const val = a[key] || 'Desconocido';
+    counts[val] = (counts[val] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const container = $(containerId);
+  container.innerHTML = '';
+  if (sorted.length === 0) {
+    container.innerHTML = '<span>Sin datos todavía.</span>';
+    return;
+  }
+  sorted.forEach(([label, count]) => {
+    const div = document.createElement('div');
+    div.className = 'stats-row';
+    div.innerHTML = `<span>${label}</span><span class="stats-count">${count}</span>`;
+    container.appendChild(div);
+  });
+}
+
+//=================================
+// CatPoints
+//=================================
+async function addCatPoints(amount, reason) {
+  const { data: current } = await supabaseClient.from('profiles').select('cat_points').eq('id', currentUser.id).single();
+  if (!current) return;
+
+  const newTotal = current.cat_points + amount;
+  const { error } = await supabaseClient.from('profiles').update({ cat_points: newTotal }).eq('id', currentUser.id);
+  if (error) { console.error('Error adding CatPoints:', error); return; }
+
+  userProfile.cat_points = newTotal;
+  console.log(`+${amount} CatPoints (${reason})`);
+}
+
+async function grantCatPoints() {
+  if (!currentManagedEmployee) return;
+  const amount = parseInt($('catpoints-to-add').value);
+  if (!amount || amount <= 0) {
+    showMsgBox('error', 'Error', 'Ingresa una cantidad válida (mayor a 0).', 'Cerrar');
+    return;
+  }
+
+  $('loadingModal').classList.remove('hidden');
+  const { data, error } = await supabaseClient
+    .from('profiles')
+    .update({ cat_points: currentManagedEmployee.cat_points + amount })
+    .eq('id', currentManagedEmployee.id)
+    .select();
+  $('loadingModal').classList.add('hidden');
+
+  if (error || !data || data.length === 0) {
+    showMsgBox('error', 'Error', `No se pudo otorgar: ${error ? error.message : 'permiso denegado'}`, 'Cerrar');
+    return;
+  }
+
+  currentManagedEmployee.cat_points = data[0].cat_points;
+  $('manage-catpoints-display').textContent = currentManagedEmployee.cat_points;
+  $('catpoints-to-add').value = '';
+  showMsgBox('success', 'Éxito!', `Se otorgaron ${amount} CatPoints.`, 'Cerrar');
+}
+
+//=================================
+// Birthdays
+//=================================
+async function checkBirthdays() {
+  const today = new Date();
+  const todayMonth = today.getMonth() + 1;
+  const todayDay = today.getDate();
+
+  const isMyBirthday = userProfile.birth_date &&
+    (new Date(userProfile.birth_date).getUTCMonth() + 1) === todayMonth &&
+    new Date(userProfile.birth_date).getUTCDate() === todayDay;
+
+  if (isMyBirthday) {
+    $('dashboard_widget_brief').className = "widget status_ok";
+    $('dashboard_widget_brief').querySelector('.status').textContent = "Feliz cumpleaños! Te deseamos un gran día 🎉";
+    return true;
+  }
+
+  const { data: allProfiles, error } = await supabaseClient.from('profiles').select('id, name, birth_date');
+  if (error) return false;
+
+  const birthdayPeople = allProfiles.filter(p => {
+    if (!p.birth_date || p.id === currentUser.id) return false;
+    const d = new Date(p.birth_date);
+    return (d.getUTCMonth() + 1) === todayMonth && d.getUTCDate() === todayDay;
+  });
+
+  if (birthdayPeople.length > 0) {
+    const names = birthdayPeople.map(p => p.name).join(', ');
+    $('dashboard_widget_brief').className = "widget status_info";
+    $('dashboard_widget_brief').querySelector('.status').textContent = `🎂 Hoy es el cumpleaños de ${names}! No olvides felicitar.`;
+    return true;
+  }
+
+  return false;
+}
+
+//=================================
+// Store
+//=================================
+async function loadStore() {
+  const { data: items, error } = await supabaseClient.from('store_items').select('*').eq('active', true).order('cost');
+  if (error) { console.error(error); return; }
+  $('store-my-points').textContent = userProfile.cat_points ?? 10;
+  renderStoreItems(items);
+}
+
+function renderStoreItems(items) {
+	const container = $('store-items-list');
+	container.innerHTML = '';
+	const isCeo = userProfile.role === 'ceo';
+
+	items.forEach(item => {
+		const div = document.createElement('div');
+		div.className = 'element';
+		div.innerHTML = `
+			<div class="top_wrapper">
+				<span class="title">${item.name}</span>
+				<span class="store-price">${item.cost} pt</span>
+			</div>
+			<div class="preview"><img alt="Item Preview" src="${item.image_url || "/assets/optionsInGrid.png"}"></div>
+			<p>${item.description || ''}</p>
+			<div class="bottom_wrapper">
+				<button onclick="buyStoreItem('${item.id}', '${item.type}')"><i class="fi fi-rr-shopping-cart"></i> Comprar</button>
+				${isCeo ? `
+					<input type="file" id="edit-image-${item.id}" accept="image/*" class="hidden" onchange="updateStoreItemImage('${item.id}')">
+					<button class="btnsmall" onclick="document.getElementById('edit-image-${item.id}').click()"><i class="fi fi-rr-picture"></i></button>
+					<button class="btnsmall" onclick="removeStoreItem('${item.id}')"><i class="fi fi-rr-trash"></i></button>
+				` : ''}
+			</div>
+		`;
+		container.appendChild(div);
+	});
+}
+
+async function updateStoreItemImage(itemId) {
+	const input = $(`edit-image-${itemId}`);
+	if (input.files.length === 0) return;
+
+	$('loadingModal').classList.remove('hidden');
+	const blob = await resizeImageToHeight(input.files[0], 256, 0.8);
+	const path = `store-items/${Date.now()}-${input.files[0].name}`;
+
+	const { error: upErr } = await supabaseClient.storage.from('shared-files').upload(path, blob);
+	if (upErr) {
+		$('loadingModal').classList.add('hidden');
+		showMsgBox('error', 'Error', `No se pudo subir la imagen: ${upErr.message}`, 'Cerrar');
+		return;
+	}
+
+	const { data: urlData } = supabaseClient.storage.from('shared-files').getPublicUrl(path);
+	const { error } = await supabaseClient.from('store_items').update({ image_url: urlData.publicUrl }).eq('id', itemId);
+	$('loadingModal').classList.add('hidden');
+
+	if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+	showMsgBox('success', 'Éxito!', 'Imagen actualizada.', 'Cerrar');
+	loadStore();
+}
+
+async function buyStoreItem(itemId, itemType) {
+	const confirmMsg = await showAskBox('question', 'Confirmar compra', '¿Deseas comprar este producto?', 'Comprar', 'Cancelar');
+	if (!confirmMsg.confirmed) return;
+
+	$('loadingModal').classList.remove('hidden');
+	const { data, error } = await supabaseClient.rpc('purchase_store_item', { p_item_id: itemId });
+	$('loadingModal').classList.add('hidden');
+
+	if (error || !data.success) {
+		showMsgBox('error', 'Error', data?.message || error?.message || 'No se pudo comprar.', 'Cerrar');
+		return;
+	}
+
+	const { data: profile } = await supabaseClient.from('profiles').select('cat_points').eq('id', currentUser.id).single();
+	userProfile.cat_points = profile.cat_points;
+	$('store-my-points').textContent = profile.cat_points;
+
+	if (itemType === 'custom_announcement') {
+		const msgPrompt = await showPromptMsgBox('question', 'Anuncio Custom', 'Escribe el mensaje que verán todos en el inicio por 24h:', 'Publicar', 'Cancelar');
+		if (msgPrompt.confirmed && msgPrompt.value.trim()) {
+			await supabaseClient.rpc('set_custom_announcement', { p_message: msgPrompt.value.trim() });
+		}
+	} else if (itemType === 'custom') {
+		await supabaseClient.from('feedback').insert([{
+			user_id: currentUser.id, type: 'general',
+			message: `[COMPRA TIENDA] ${userProfile.name} compró un producto personalizado.`
+		}]);
+	} else if (['wallpaper', 'frame', 'tag'].includes(itemType)) {
+		showMsgBox('success', '¡Comprado!', 'Ve a Configuración > Mi Inventario para activarlo.', 'Cerrar');
+		return;
+	}
+
+	showMsgBox('success', '¡Comprado!', 'Compra realizada con éxito.', 'Cerrar');
+}
+
+async function createStoreItem() {
+	const name = $('new-item-name').value.trim();
+	const description = $('new-item-desc').value.trim();
+	const cost = parseInt($('new-item-cost').value);
+	const type = $('new-item-type').value;
+	const imageInput = $('new-item-image');
+
+	if (!name || !cost || cost <= 0) { showMsgBox('error', 'Error', 'Ingresa un nombre y un costo válido.', 'Cerrar'); return; }
+
+	let imageUrl = null;
+	$('loadingModal').classList.remove('hidden');
+
+	if (imageInput.files.length > 0) {
+		const blob = await resizeImageToHeight(imageInput.files[0], 256, 0.8);
+		const path = `store-items/${Date.now()}-${imageInput.files[0].name}`;
+		const { error: upErr } = await supabaseClient.storage.from('shared-files').upload(path, blob);
+		if (!upErr) {
+			const { data: urlData } = supabaseClient.storage.from('shared-files').getPublicUrl(path);
+			imageUrl = urlData.publicUrl;
+		}
+	}
+
+	const { error } = await supabaseClient.from('store_items').insert([{ name, description, cost, type, image_url: imageUrl, created_by: currentUser.id }]);
+	$('loadingModal').classList.add('hidden');
+
+	if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+
+	$('new-item-name').value = ''; $('new-item-desc').value = ''; $('new-item-cost').value = ''; imageInput.value = '';
+	showMsgBox('success', 'Éxito!', 'Producto agregado.', 'Cerrar');
+	loadStore();
+}
+
+async function removeStoreItem(itemId) {
+  const confirmMsg = await showAskBox('warn', 'Confirmar', '¿Eliminar este producto de la tienda?', 'Eliminar', 'Cancelar');
+  if (!confirmMsg.confirmed) return;
+  await supabaseClient.from('store_items').update({ active: false }).eq('id', itemId);
+  showMsgBox('success', 'Éxito!', 'Producto eliminado.', 'Cerrar');
+  loadStore();
+}
+
+//=================================
+// Custom Dashboard Banner
+//=================================
+async function loadCustomBanner() {
+  const { data, error } = await supabaseClient.from('home_custom_banner').select('*').eq('id', 1).single();
+  if (error || !data || !data.message || !data.expires_at) return;
+
+  if (new Date(data.expires_at) < new Date()) return;
+
+  const div = document.createElement('div');
+  div.className = 'widget status_info custom-banner-widget';
+  div.innerHTML = `<div class="header"><i class="fi fi-rr-megaphone"></i><span class="title">Anuncio Especial</span></div><span class="status">${data.message}</span>`;
+  $('.widgets')?.prepend?.(div) || document.querySelector('.widgets').prepend(div);
+}
+
+//=================================
+// Sticky Notes
+//=================================
+let stickyNoteCount = 0;
+
+function createStickyNote() {
+	stickyNoteCount++;
+	const id = `stickyNote_${Date.now()}`;
+	const note = document.createElement('div');
+	note.className = 'sticky-note';
+	note.id = id;
+	note.style.top = `${80 + (stickyNoteCount % 5) * 20}px`;
+	note.style.left = `${100 + (stickyNoteCount % 5) * 20}px`;
+
+	note.innerHTML = `
+		<div class="sticky-note-header">
+		<i class="fi fi-rr-notebook"></i>
+		<div class="btns" id="${id}_btnsWrapper">
+			<button onclick="toggleMinimizeNote('${id}')"><i class="fi fi-rr-minus"></i></button>
+			<button onclick="document.getElementById('${id}').remove()"><i class="fi fi-rr-cross"></i></button> 
+		</div>
+		</div>
+		<textarea placeholder="Escribe algo..."></textarea>
+		<div class="resize-handle"></div>
+	`;
+	document.body.appendChild(note);
+	makeStickyNoteDraggable(note);
+	makeStickyNoteResizable(note);
+	$(`${id}_btnsWrapper`).onpointerdown = (e) => { e.stopPropagation(); };
+}
+
+function toggleMinimizeNote(id) {
+  document.getElementById(id).classList.toggle('minimized');
+}
+
+function makeStickyNoteDraggable(note) {
+  const header = note.querySelector('.sticky-note-header');
+  let offsetX, offsetY, dragging = false;
+
+  header.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    e.preventDefault();
+    
+    header.setPointerCapture(e.pointerId);
+
+    offsetX = e.clientX - note.offsetLeft;
+    offsetY = e.clientY - note.offsetTop;
+  });
+
+  header.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    note.style.left = `${e.clientX - offsetX}px`;
+    note.style.top = `${e.clientY - offsetY}px`;
+  });
+
+  const stopDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    if (header.hasPointerCapture(e.pointerId)) {
+      header.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  header.addEventListener('pointerup', stopDrag);
+  header.addEventListener('pointercancel', stopDrag);
+}
+
+function makeStickyNoteResizable(note) {
+  const handle = note.querySelector('.resize-handle');
+  let resizing = false;
+  let startX, startY, startWidth, startHeight;
+
+  handle.addEventListener('pointerdown', (e) => {
+    resizing = true;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    handle.setPointerCapture(e.pointerId);
+
+    startX = e.clientX;
+    startY = e.clientY;
+    startWidth = note.offsetWidth;
+    startHeight = note.offsetHeight;
+  });
+
+  handle.addEventListener('pointermove', (e) => {
+    if (!resizing) return;
+    const newWidth = startWidth + (e.clientX - startX);
+    const newHeight = startHeight + (e.clientY - startY);
+
+    note.style.width = `${Math.max(160, newWidth)}px`;
+    note.style.height = `${Math.max(120, newHeight)}px`;
+  });
+
+  const stopResize = (e) => {
+    if (!resizing) return;
+    resizing = false;
+    if (handle.hasPointerCapture(e.pointerId)) {
+      handle.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  handle.addEventListener('pointerup', stopResize);
+  handle.addEventListener('pointercancel', stopResize);
+}
+
+//=================================
+// Chats
+//=================================
+let chatRealtimeChannel = null;
+let myChatIds = new Set();
+let currentOpenChatId = null;
+let currentOpenChatCreator = null;
+let peoplePhotoMap = {};
+let peopleFrameMap = {};
+let peopleTagMap = {};
+
+function subscribeToChatRealtime() {
+	if (chatRealtimeChannel) return;
+	chatRealtimeChannel = supabaseClient.channel('chat-messages-listener')
+		.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+		const msg = payload.new;
+		if (!myChatIds.has(msg.chat_id)) return;
+		if (msg.chat_id === currentOpenChatId && msg.sender_id !== currentUser.id) {
+			appendMessageToView(msg);
+		}
+		loadChatsList();
+		})
+		.subscribe();
+}
+
+function unsubscribeFromChatRealtime() {
+	if (chatRealtimeChannel) {
+		supabaseClient.removeChannel(chatRealtimeChannel);
+		chatRealtimeChannel = null;
+	}
+	currentOpenChatId = null;
+}
+
+async function loadChatsList() {
+	$('chatsListContainer').innerHTML = '<span class="chat-empty">Cargando chats...</span>';
+	const { data: memberships, error } = await supabaseClient.from('chat_members').select('chat_id').eq('user_id', currentUser.id);
+	if (error) { console.error(error); return; }
+
+	const chatIds = memberships.map(m => m.chat_id);
+	myChatIds = new Set(chatIds);
+
+	if (chatIds.length === 0) { renderChatsList([]); return; }
+
+	const { data: chats } = await supabaseClient.from('chats').select('*').in('id', chatIds);
+	const { data: allMembers } = await supabaseClient.from('chat_members').select('chat_id, user_id').in('chat_id', chatIds);
+	const { data: recentMessages } = await supabaseClient
+		.from('messages').select('chat_id, content, sender_id, created_at')
+		.in('chat_id', chatIds).order('created_at', { ascending: false }).limit(200);
+
+	const lastMsgByChat = {};
+	(recentMessages || []).forEach(m => { if (!lastMsgByChat[m.chat_id]) lastMsgByChat[m.chat_id] = m; });
+
+	const chatData = chats.map(chat => {
+		let displayName, displayPhoto, otherUserId = null;
+		if (chat.type === 'private') {
+			const otherMember = allMembers.find(m => m.chat_id === chat.id && m.user_id !== currentUser.id);
+			otherUserId = otherMember?.user_id;
+			displayName = peopleMap[otherUserId] || 'Usuario';
+			displayPhoto = peoplePhotoMap[otherUserId] || '/assets/userdefault.jpg';
+		} else {
+			displayName = chat.name;
+			displayPhoto = '/assets/groupColab.png';
+		}
+		return { ...chat, displayName, displayPhoto, otherUserId, lastMsg: lastMsgByChat[chat.id] };
+	});
+
+	chatData.sort((a, b) => new Date(b.last_message_at || b.created_at) - new Date(a.last_message_at || a.created_at));
+	renderChatsList(chatData);
+}
+
+function renderChatsList(chats) {
+	const container = $('chatsListContainer');
+	container.innerHTML = '';
+	if (chats.length === 0) { container.innerHTML = '<span class="chat-empty">No tienes chats todavía.</span>'; return; }
+
+	chats.forEach(chat => {
+		const div = document.createElement('div');
+		div.className = 'chatEl';
+		div.onclick = () => openChat(chat.id, chat.displayName, chat.displayPhoto, chat.type, chat.created_by, chat.otherUserId);
+
+		const preview = chat.lastMsg
+			? `<strong>${chat.lastMsg.sender_id === currentUser.id ? 'Tú' : (peopleMap[chat.lastMsg.sender_id] || '')}:</strong> ${chat.lastMsg.content}`
+			: 'Sin mensajes todavía';
+
+		div.innerHTML = `
+			<div class="pfp-frame-wrapper">
+				<img src="${chat.displayPhoto}" alt="Profile Photo">
+				${chat.otherUserId && peopleFrameMap[chat.otherUserId] ? `<img class="pfp-frame-overlay" src="${peopleFrameMap[chat.otherUserId]}">` : ''}
+			</div>
+			<div class="content">
+				<span class="chatName">${chat.displayName}${chat.otherUserId && peopleTagMap[chat.otherUserId] ? ` <span class="employee-tag">${peopleTagMap[chat.otherUserId]}</span>` : ''}</span>
+				<span class="lastMsg">${preview}</span>
+			</div>
+		`;
+		container.appendChild(div);
+	});
+}
+
+async function openChat(chatId, name, photo, type, createdBy, otherUserId) {
+	currentOpenChatId = chatId;
+	currentOpenChatCreator = createdBy;
+	/*document.querySelector('.chatContainer')?.classList.add('mobile-open');*/
+	document.getElementById('pageChat_chatsList').classList.add('hideOnTouch');
+	document.querySelector('.chatContainer').classList.remove('hideOnTouch');
+	const tagHtml = otherUserId && peopleTagMap[otherUserId] ? ` <span class="employee-tag">${peopleTagMap[otherUserId]}</span>` : '';
+	$('chatHeaderName').innerHTML = `${name}${tagHtml}`;
+	$('chatHeaderImg').src = photo;
+	applyFrameOverlay($('chatHeaderImg'), otherUserId ? peopleFrameMap[otherUserId] : null);
+
+	const canManage = type === 'group' && (createdBy === currentUser.id || userProfile.role === 'ceo');
+	$('manageGroupBtn').classList.toggle('hidden', !canManage);
+
+	const { data: messages, error } = await supabaseClient
+		.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true }).limit(200);
+	if (error) { console.error(error); return; }
+
+	const container = $('pageChat_chatMessages');
+	container.innerHTML = '';
+	messages.forEach(m => appendMessageToView(m, false));
+	container.scrollTop = container.scrollHeight;
+}
+
+function appendMessageToView(msg, scroll = true) {
+	if (msg.chat_id !== currentOpenChatId) return;
+	const container = $('pageChat_chatMessages');
+	const div = document.createElement('div');
+	div.className = `msg ${msg.sender_id === currentUser.id ? 'this' : 'other'}`;
+	div.textContent = msg.content;
+	container.appendChild(div);
+	if (scroll) container.scrollTop = container.scrollHeight;
+}
+
+$('pageChat_chatTextInput')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+	document.querySelector('.chatBottomCom button')?.addEventListener('click', sendChatMessage);
+
+	async function sendChatMessage() {
+	const input = $('pageChat_chatTextInput');
+	const content = input.value.trim();
+	if (!content || !currentOpenChatId) return;
+
+	const maxLen = ['admin', 'ceo'].includes(userProfile.role) ? 800 : 500;
+	if (content.length > maxLen) {
+		showMsgBox('error', 'Mensaje muy largo', `El límite es de ${maxLen} caracteres.`, 'Cerrar');
+		return;
+	}
+
+	input.value = '';
+	const { data, error } = await supabaseClient.rpc('send_chat_message', { p_chat_id: currentOpenChatId, p_content: content });
+
+	if (error || !data.success) {
+		showMsgBox('error', 'Error', (data && data.message) || error?.message || 'No se pudo enviar el mensaje.', 'Cerrar');
+		return;
+	}
+
+	appendMessageToView({ chat_id: currentOpenChatId, sender_id: currentUser.id, content });
+	loadChatsList();
+}
+
+$('pageChat_chatGoBackBtnMb')?.addEventListener('click', () => {
+	document.getElementById('pageChat_chatsList').classList.remove('hideOnTouch');
+	document.querySelector('.chatContainer').classList.add('hideOnTouch');
+	currentOpenChatId = null;
+});
+
+//=================================
+// Chat Modals
+//=================================
+function closeModal(id) { $(id).classList.remove('show'); }
+
+function getChattablePeople() {
+	return Object.entries(peopleMap)
+		.filter(([id]) => id !== currentUser.id)
+		.filter(([id]) => userProfile.is_system_account || !isSystemAccount(id));
+}
+
+function isSystemAccount(userId) {
+  	return systemAccountIds.has(userId);
+}
+let systemAccountIds = new Set();
+
+async function loadSystemAccountIds() {
+	const { data } = await supabaseClient.from('profiles').select('id').eq('is_system_account', true);
+	systemAccountIds = new Set((data || []).map(p => p.id));
+}
+
+function openNewChatModal() {
+	const container = $('newChatPeopleList');
+	container.innerHTML = '';
+	getChattablePeople().forEach(([id, name]) => {
+		const div = document.createElement('div');
+		div.className = 'element';
+		div.innerHTML = `<img src="${peoplePhotoMap[id] || '/assets/userdefault.jpg'}" class="directory-thumb"><span>${name}</span>`;
+		div.onclick = () => startPrivateChat(id, name);
+		container.appendChild(div);
+	});
+	$('newChatModal').classList.add('show');
+}
+
+async function startPrivateChat(userId, name) {
+	$('newChatModal').classList.remove('show');
+
+	$('loadingModal').classList.remove('hidden');
+	const { data: chatId, error } = await supabaseClient.rpc('create_or_get_private_chat', { p_other_user_id: userId });
+	$('loadingModal').classList.add('hidden');
+
+	if (error) {
+		showMsgBox('error', 'Error', error.message, 'Cerrar');
+		return;
+	}
+	closeModal('newChatModal');
+	await loadChatsList();
+	openChat(chatId, name, peoplePhotoMap[userId] || '/assets/userdefault.jpg', 'private', null, userId);
+}
+
+function openNewGroupModal() {
+	$('newGroupNameInput').value = '';
+	const container = $('newGroupPeopleList');
+	container.innerHTML = '';
+	getChattablePeople().forEach(([id, name]) => {
+		const div = document.createElement('div');
+		div.className = 'element';
+		div.innerHTML = `<label><input type="checkbox" value="${id}" class="newGroupMemberCheckbox"> ${name}</label>`;
+		container.appendChild(div);
+	});
+	$('newGroupModal').classList.add('show');
+}
+
+async function submitNewGroup() {
+	$('newGroupModal').classList.remove('show');
+
+	const name = $('newGroupNameInput').value.trim();
+	if (!name) { showMsgBox('error', 'Error', 'Ingresa un nombre para el grupo.', 'Cerrar'); return; }
+
+	const memberIds = Array.from(document.querySelectorAll('.newGroupMemberCheckbox:checked')).map(c => c.value);
+
+	$('loadingModal').classList.remove('hidden');
+	const { data: chatId, error } = await supabaseClient.rpc('create_group_chat', { p_name: name, p_member_ids: memberIds });
+	$('loadingModal').classList.add('hidden');
+
+	if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+
+	closeModal('newGroupModal');
+	showMsgBox('success', 'Éxito!', 'Grupo creado.', 'Cerrar');
+	await loadChatsList();
+	openChat(chatId, name, '/assets/groupColab.png', 'group', currentUser.id);
+}
+
+async function openManageGroupModal() {
+	if (!currentOpenChatId) return;
+
+	const { data: members } = await supabaseClient.from('chat_members').select('*').eq('chat_id', currentOpenChatId);
+
+	const listContainer = $('manageGroupMembersList');
+	listContainer.innerHTML = '';
+	members.forEach(m => {
+		const isCreator = m.user_id === currentOpenChatCreator;
+		const div = document.createElement('div');
+		div.className = 'element';
+		div.innerHTML = `
+			<span>${peopleMap[m.user_id] || 'Usuario'} ${isCreator ? '(Creador)' : ''}</span>
+			${!isCreator ? `
+				<label><input type="checkbox" ${m.can_send ? 'checked' : ''} onchange="toggleMemberPermission('${m.user_id}', this.checked)"> Puede enviar</label>
+				<button class="btnsmall" onclick="removeGroupMember('${m.user_id}')"><i class="fi fi-rr-trash"></i></button>
+			` : ''}
+		`;
+		listContainer.appendChild(div);
+	});
+
+	const memberIds = new Set(members.map(m => m.user_id));
+	const addContainer = $('manageGroupAddList');
+	addContainer.innerHTML = '';
+	getChattablePeople().filter(([id]) => !memberIds.has(id)).forEach(([id, name]) => {
+		const div = document.createElement('div');
+		div.className = 'element';
+		div.innerHTML = `<span>${name}</span><button class="btnsmall" onclick="addGroupMember('${id}')"><i class="fi fi-rr-plus"></i></button>`;
+		addContainer.appendChild(div);
+	});
+
+	$('manageGroupModal').classList.add('show');
+}
+
+async function toggleMemberPermission(userId, canSend) {
+	const { error } = await supabaseClient.rpc('toggle_chat_member_permission', { p_chat_id: currentOpenChatId, p_user_id: userId, p_can_send: canSend });
+	if (error) showMsgBox('error', 'Error', error.message, 'Cerrar');
+}
+
+async function addGroupMember(userId) {
+	const { error } = await supabaseClient.rpc('manage_group_members', { p_chat_id: currentOpenChatId, p_add: [userId], p_remove: null });
+	if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+	openManageGroupModal();
+}
+
+async function removeGroupMember(userId) {
+	const { error } = await supabaseClient.rpc('manage_group_members', { p_chat_id: currentOpenChatId, p_add: null, p_remove: [userId] });
+	if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+	openManageGroupModal();
+}
+
+//=================================
+// Store Inventory
+//=================================
+async function loadInventory() {
+  const { data, error } = await supabaseClient.from('user_inventory').select('*').eq('user_id', currentUser.id).order('acquired_at', { ascending: false });
+  if (error) { console.error(error); return; }
+
+  const container = $('inventory-list');
+  container.innerHTML = '';
+  if (!data || data.length === 0) { container.innerHTML = '<span>No tienes items todavía. Visita la Tienda!</span>'; return; }
+
+  data.forEach(inv => {
+    const div = document.createElement('div');
+    div.className = `inventory-item ${inv.active ? 'active' : ''}`;
+    div.innerHTML = `
+      ${inv.image_url ? `<img src="${inv.image_url}">` : `<i class="fi fi-rr-star"></i>`}
+      <span>${inv.name}</span>
+      <button class="btnsmall" onclick="${inv.active ? `unequipInventoryType('${inv.type}')` : `equipInventoryItem('${inv.id}')`}">
+        ${inv.active ? 'Quitar' : 'Usar'}
+      </button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function equipInventoryItem(inventoryId) {
+  const { data, error } = await supabaseClient.rpc('equip_inventory_item', { p_inventory_id: inventoryId });
+  if (error || !data.success) { showMsgBox('error', 'Error', data?.message || error?.message, 'Cerrar'); return; }
+  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+  userProfile = profile;
+  applyEquippedItems();
+  loadInventory();
+  showMsgBox('success', 'Éxito!', 'Item activado.', 'Cerrar');
+}
+
+async function unequipInventoryType(type) {
+  const { error } = await supabaseClient.rpc('unequip_inventory_type', { p_type: type });
+  if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+  userProfile = profile;
+  applyEquippedItems();
+  loadInventory();
+}
+
+function applyEquippedItems() {
+	if (userProfile.active_wallpaper_url) {
+		$('softLockOverlay').style.backgroundImage = `url('${userProfile.active_wallpaper_url}')`;
+		$('page_login').style.backgroundImage = `url('${userProfile.active_wallpaper_url}')`;
+		$('page_home').style.backgroundImage = `url('${userProfile.active_wallpaper_url}')`;
+		$('cidLookupScreen').style.backgroundImage = `url('${userProfile.active_wallpaper_url}')`;
+	} else {
+		$('softLockOverlay').style.backgroundImage = `url('/assets/wallpaper.webp')`;
+		$('page_login').style.backgroundImage = `url('/assets/wallpaper.webp')`;
+		$('page_home').style.backgroundImage = `url('/assets/wallpaper.webp')`;
+		$('cidLookupScreen').style.backgroundImage = `url('/assets/wallpaper.webp')`;
+	}
+
+	const frameTargets = ['headerPFPimg', 'settings_pfp', 'strikesPagePFPimg'];
+    frameTargets.forEach(id => applyFrameOverlay($(id), userProfile.active_frame_url));
+
+	const nameEl = $('header_pfp')?.querySelector('.name');
+	if (nameEl) {
+		const existingTag = nameEl.querySelector('.employee-tag');
+		if (existingTag) existingTag.remove();
+		if (userProfile.active_tag) {
+		nameEl.insertAdjacentHTML('beforeend', `<span class="employee-tag">${userProfile.active_tag}</span>`);
+		}
+	}
+}
+
+function resizeImageToHeight(file, targetHeight = 256, quality = 0.8) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const img = new Image();
+			img.onload = () => {
+				const scale = targetHeight / img.height;
+				const newWidth = Math.round(img.width * scale);
+				const canvas = document.createElement('canvas');
+				canvas.width = newWidth;
+				canvas.height = targetHeight;
+				const ctx = canvas.getContext('2d');
+				ctx.drawImage(img, 0, 0, newWidth, targetHeight);
+				canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+			};
+			img.onerror = reject;
+			img.src = e.target.result;
+		};
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
+}
+
+//=================================
+// Dynamic Greeting
+//=================================
+async function getSmartGreeting(profile) {
+	const now = new Date();
+	const hour = now.getHours();
+	const day = now.getDay();
+	const isWeekend = day === 0 || day === 6;
+
+	const { data: tasks } = await supabaseClient.from('tasks').select('id, status').eq('assigned_to', currentUser.id);
+	const pendingCount = (tasks || []).filter(t => t.status === 'pending').length;
+
+	const { data: recentViews } = await supabaseClient
+		.from('activity_log').select('page').eq('user_id', currentUser.id).eq('event_type', 'page_view')
+		.gte('created_at', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString());
+
+	const pageCounts = {};
+	(recentViews || []).forEach(v => { pageCounts[v.page] = (pageCounts[v.page] || 0) + 1; });
+	const favoritePage = Object.entries(pageCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+	const pageLabels = { tasks: 'tareas', chat: 'chat', store: 'tienda', news: 'novedades', strikes: 'estado de cuenta' };
+
+	let timeTag, timePhrases;
+	if (hour >= 5 && hour < 12) {
+		timeTag = 'c-gradient-morning';
+		timePhrases = ['Buenos días', 'A darle con todo', 'Buen día'];
+	} else if (hour >= 12 && hour < 19) {
+		timeTag = 'c-gradient-afternoon';
+		timePhrases = ['Buenas tardes', 'Linda tarde', 'Que vaya bien tu tarde'];
+	} else {
+		timeTag = 'c-gradient-night';
+		timePhrases = ['Buenas noches', 'Terminando el día', 'A descansar pronto'];
+	}
+
+	const extras = [];
+	if (isWeekend) extras.push('¿Trabajando en fin de semana? Eso se aprecia.');
+	if (pendingCount === 0) extras.push('Vas al día con tus tareas, excelente!');
+	else if (pendingCount === 1) extras.push('Tienes 1 tarea esperando por ti.');
+	else if (pendingCount >= 3) extras.push(`Tienes ${pendingCount} tareas pendientes, vamos con calma.`);
+	if (userProfile.login_streak >= 3) extras.push(`Llevas ${userProfile.login_streak} días seguidos entrando, sigue así!`);
+	if (favoritePage && pageLabels[favoritePage]) extras.push(`Veo que sueles revisar ${pageLabels[favoritePage]} seguido.`);
+	if (hour >= 23 || hour < 5) extras.push('Es tarde, no te desveles demasiado.');
+
+	const chosenTimePhrase = timePhrases[Math.floor(Math.random() * timePhrases.length)];
+	const chosenExtra = extras.length > 0 ? extras[Math.floor(Math.random() * extras.length)] : '';
+
+	return `<${timeTag}>${chosenTimePhrase}</${timeTag}>,<br>${profile.name}${chosenExtra ? `<br><span class="greeting-extra">${chosenExtra}</span>` : ''}`;
+}
+
+//=================================
+// Quick Actions Widget
+//=================================
+async function loadQuickActionsWidget() {
+	const actions = [];
+
+	const { data: tasks } = await supabaseClient.from('tasks').select('id, status').eq('assigned_to', currentUser.id);
+	const pendingCount = (tasks || []).filter(t => t.status === 'pending').length;
+	if (pendingCount > 0) actions.push({ label: `Ver ${pendingCount} tarea(s) pendiente(s)`, icon: 'fi-rr-task-checklist', page: 'tasks' });
+
+	if (['admin', 'ceo'].includes(userProfile.role)) {
+		const { data: incoming } = await supabaseClient.from('requests').select('id').eq('admin_id', currentUser.id).eq('status', 'pending');
+		if (incoming && incoming.length > 0) actions.push({ label: `Revisar ${incoming.length} solicitud(es)`, icon: 'fi-rr-inbox', page: 'incomingrequests' });
+	}
+
+	const { data: myRequests } = await supabaseClient.from('requests').select('status').eq('employee_id', currentUser.id);
+	const stillPending = (myRequests || []).filter(r => r.status === 'pending').length;
+	if (stillPending > 0) actions.push({ label: 'Ver mis solicitudes', icon: 'fi-rr-envelope', page: 'requests' });
+
+	actions.push({ label: 'Visitar la Tienda', icon: 'fi-rr-shopping-bag', page: 'store' });
+	actions.push({ label: 'Ver Novedades', icon: 'fi-rr-resources', page: 'news' });
+	actions.push({ label: 'Abrir el Chat', icon: 'fi-rr-comment', page: 'chat' });
+
+	const finalActions = actions.slice(0, 4);
+	const container = $('quickActionsButtons');
+	container.innerHTML = '';
+	finalActions.forEach(a => {
+		const btn = document.createElement('button');
+		btn.innerHTML = `<i class="fi ${a.icon}"></i> ${a.label}`;
+		btn.onclick = () => gotoPage(a.page);
+		container.appendChild(btn);
+	});
+}
+
+//=================================
+// PFP Frames
+//=================================
+function applyFrameOverlay(imgElement, frameUrl) {
+  if (!imgElement) return;
+  const parent = imgElement.parentElement;
+  parent.classList.add('pfp-frame-wrapper');
+
+  let overlay = parent.querySelector('.pfp-frame-overlay');
+  if (!frameUrl) {
+    if (overlay) overlay.remove();
+    return;
+  }
+
+  if (!overlay) {
+    overlay = document.createElement('img');
+    overlay.className = 'pfp-frame-overlay';
+    parent.appendChild(overlay);
+  }
+  overlay.src = frameUrl;
+}
+
+//=================================
+// Terms & Conditions
+//=================================
+let platformTermsVersion = 0;
+let platformTermsActive = false;
+
+async function checkTermsStatus() {
+	const { data, error } = await supabaseClient
+		.from('platform_settings')
+		.select('terms_version, terms_active')
+		.eq('id', 1)
+		.single();
+
+	if (error) { console.error(error); return false; }
+
+	platformTermsVersion = data.terms_version;
+	platformTermsActive = data.terms_active;
+
+	const mustAccept = platformTermsActive && (userProfile.accepted_terms_version || 0) < platformTermsVersion;
+
+	$('termsBlockOverlay').classList.toggle('show', mustAccept);
+	return mustAccept;
+}
+
+async function acceptTerms() {
+	$('acceptTermsBtn').disabled = true;
+
+	const { data, error } = await supabaseClient
+		.from('profiles')
+		.update({ accepted_terms_version: platformTermsVersion })
+		.eq('id', currentUser.id)
+		.select();
+
+	$('acceptTermsBtn').disabled = false;
+
+	if (error || !data || data.length === 0) {
+		showMsgBox('error', 'Error', `No se pudo registrar la aceptación: ${error ? error.message : 'permiso denegado'}`, 'Cerrar');
+		return;
+	}
+
+	userProfile.accepted_terms_version = platformTermsVersion;
+	$('termsBlockOverlay').classList.remove('show');
+	showMsgBox('success', 'Gracias!', 'Términos y condiciones aceptados.', 'Cerrar');
+}
+
+async function publishNewTerms() {
+	const confirmMsg = await showAskBox(
+		'warn',
+		'Nuevos Términos y Condiciones',
+		'Esto iniciará una nueva revisión: todos los usuarios (incluido tú) deberán aceptar los nuevos términos antes de seguir usando la plataforma. ¿Continuar?',
+		'Publicar', 'Cancelar'
+	);
+	if (!confirmMsg.confirmed) return;
+
+	$('loadingModal').classList.remove('hidden');
+
+	const { data: current } = await supabaseClient.from('platform_settings').select('terms_version').eq('id', 1).single();
+	const newVersion = (current?.terms_version || 0) + 1;
+
+	const { error } = await supabaseClient
+		.from('platform_settings')
+		.update({ terms_version: newVersion, terms_active: true, terms_updated_at: new Date().toISOString() })
+		.eq('id', 1);
+
+	$('loadingModal').classList.add('hidden');
+
+	if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+
+	showMsgBox('success', 'Publicado!', 'Los nuevos términos fueron publicados.', 'Cerrar');
+	checkTermsStatus();
+}
+
+async function loadTermsReviewPanel() {
+	$('loadingModal').classList.remove('hidden');
+
+	const { data: settings } = await supabaseClient.from('platform_settings').select('terms_version, terms_active').eq('id', 1).single();
+	const { data: profiles, error } = await supabaseClient.from('profiles').select('id, name, accepted_terms_version');
+
+	$('loadingModal').classList.add('hidden');
+
+	if (error) { showMsgBox('error', 'Error', 'No se pudo cargar la información.', 'Cerrar'); return; }
+
+	const version = settings.terms_version;
+	const accepted = profiles.filter(p => (p.accepted_terms_version || 0) >= version);
+	const pending = profiles.filter(p => (p.accepted_terms_version || 0) < version);
+
+	$('termsReviewStatus').innerHTML = `
+		<p>Versión actual: <strong>${version}</strong></p>
+		<p>Estado: <strong>${settings.terms_active ? 'Revisión activa (bloqueando a quien no acepte)' : 'Inactiva'}</strong></p>
+		<p>${accepted.length} de ${profiles.length} han aceptado.</p>
+	`;
+	$('endTermsReviewBtn').classList.toggle('hidden', !settings.terms_active);
+
+	$('termsAcceptedList').innerHTML = accepted.length
+		? accepted.map(p => `<div class="element"><span>${p.name}</span></div>`).join('')
+		: '<span>Nadie ha aceptado todavía.</span>';
+
+	$('termsPendingList').innerHTML = pending.length
+		? pending.map(p => `<div class="element"><span>${p.name}</span><button class="btnsmall" onclick="goToManageFromDirectory('${p.id}')"><i class="fi fi-rr-user-gear"></i></button></div>`).join('')
+		: '<span>Todos han aceptado!</span>';
+}
+
+async function endTermsReview() {
+	const confirmMsg = await showAskBox('warn', 'Finalizar Revisión', 'Esto quitará el bloqueo a quienes no hayan aceptado. Podrás decidir manualmente si banear a alguien desde Gestionar Empleados. ¿Continuar?', 'Finalizar', 'Cancelar');
+	if (!confirmMsg.confirmed) return;
+
+	$('loadingModal').classList.remove('hidden');
+	const { error } = await supabaseClient.from('platform_settings').update({ terms_active: false }).eq('id', 1);
+	$('loadingModal').classList.add('hidden');
+
+	if (error) { showMsgBox('error', 'Error', error.message, 'Cerrar'); return; }
+
+	showMsgBox('success', 'Éxito!', 'Revisión finalizada. La próxima vez que publiques nuevos términos, el proceso queda listo para repetirse.', 'Cerrar');
+	loadTermsReviewPanel();
+	checkTermsStatus();
+}
+
+function subscribeToTermsChanges() {
+	supabaseClient.channel('terms-changes')
+		.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'platform_settings' }, () => {
+			if (loggedIn) checkTermsStatus();
+		})
+		.subscribe();
 }

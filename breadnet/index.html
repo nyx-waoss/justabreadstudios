@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <!-- <meta name="robots" content="noindex, nofollow"> -->
 
@@ -29,6 +29,8 @@
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-straight/css/uicons-regular-straight.css'>
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-solid-rounded/css/uicons-solid-rounded.css'>
 	<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-thin-straight/css/uicons-thin-straight.css'>
+	<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-solid-straight/css/uicons-solid-straight.css'>
+	<link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-bold-straight/css/uicons-bold-straight.css'>
 
     <script type="application/ld+json">
     {
@@ -47,6 +49,7 @@
     </script>
 
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body ontouchstart="">
 	<div id="cidLookupScreen" class="hidden">
@@ -57,9 +60,35 @@
 	</div>
 
 	<nav id="sidebar" class="hidden">
-		<button onclick="gotoPage('home')"> <i class="fi fi-rr-house-chimney"></i> <span class="text">Inicio</span> </button>
-		<button onclick="gotoPage('tasks')"> <i class="fi fi-rr-task-checklist"></i> <span class="text">Tareas</span> </button>
-		<button onclick="gotoPage('files')"> <i class="fi fi-rr-folder-open"></i> <span class="text">Archivos</span> </button>
+		<button onclick="gotoPage('home')"> 
+			<i class="fi fi-rr-house-chimney"></i> <span class="text">Inicio</span> 
+		</button>
+
+		<div class="sidebar-category" id="socialCategory">
+			<button onclick="toggleSidebarCategory('socialCategory')" class="category-toggle">
+				<i class="fi fi-rr-comments"></i> <span class="text">Social</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
+			</button>
+			<div class="category-submenu">
+				<button onclick="gotoPage('news')"> <i class="fi fi-rr-resources"></i> <span class="text">Novedades</span> </button>
+				<button onclick="gotoPage('chat')"> <i class="fi fi-rs-messages"></i> <span class="text">Chat</span> </button>
+				<button onclick="gotoPage('feedback')"> <i class="fi fi-rr-comment-alt"></i> <span class="text">Feedback</span> </button>
+			</div>
+		</div>
+
+		<div class="sidebar-category" id="workCategory">
+			<button onclick="toggleSidebarCategory('workCategory')" class="category-toggle">
+				<i class="fi fi-rr-briefcase"></i> <span class="text">Productividad</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
+			</button>
+			<div class="category-submenu">
+				<button onclick="gotoPage('projects')"> <i class="fi fi-rr-workflow-alt"></i> <span class="text">Proyectos</span> </button>
+				<button onclick="gotoPage('tasks')"> <i class="fi fi-rr-task-checklist"></i> <span class="text">Tareas</span> </button>
+				<button onclick="gotoPage('files')"> <i class="fi fi-rr-folder-open"></i> <span class="text">Archivos</span> </button>
+			</div>
+		</div>
+
+		<button onclick="gotoPage('store')" class="hidden"> 
+			<i class="fi fi-rr-shopping-bag"></i> <span class="text">Tienda</span> 
+		</button>
 
 		<div class="sidebar-category" id="accountCategory">
 			<button onclick="toggleSidebarCategory('accountCategory')" class="category-toggle">
@@ -69,17 +98,6 @@
 				<button onclick="gotoPage('strikes')"> <i class="fi fi-rr-portrait"></i> <span class="text">Strikes y Cuenta</span> </button>
 				<button onclick="gotoPage('requests')"> <i class="fi fi-rr-envelope"></i> <span class="text">Solicitudes</span> </button>
 				<button onclick="gotoPage('identification')"> <i class="fi fi-rr-id-badge"></i> <span class="text">Identificación</span> </button>
-			</div>
-		</div>
-
-		<div class="sidebar-category" id="communityCategory">
-			<button onclick="toggleSidebarCategory('communityCategory')" class="category-toggle">
-				<i class="fi fi-rr-network-user"></i> <span class="text">Comunidad</span> <i class="fi fi-rr-angle-small-down category-arrow"></i>
-			</button>
-			<div class="category-submenu">
-				<button onclick="gotoPage('news')"> <i class="fi fi-rr-resources"></i> <span class="text">Novedades</span> </button>
-				<button onclick="gotoPage('projects')"> <i class="fi fi-rr-workflow-alt"></i> <span class="text">Proyectos</span> </button>
-				<button onclick="gotoPage('feedback')"> <i class="fi fi-rr-comment-alt"></i> <span class="text">Feedback</span> </button>
 			</div>
 		</div>
 
@@ -93,9 +111,10 @@
 				<button onclick="gotoPage('incomingrequests')"> <i class="fi fi-rr-inbox"></i> <span class="text">Solicitudes Recibidas</span> </button>
 				<button onclick="gotoPage('directory')" id="directoryBtn" class="hidden"> <i class="fi fi-rr-address-book"></i> <span class="text">Directorio de Empleados</span> </button>
 				<button onclick="toggleMaintenanceMode()" id="maintenanceToggleBtn" class="hidden"> <i class="fi fi-rr-tools"></i> <span class="text">Modo Mantenimiento</span> </button>
+				<button onclick="publishNewTerms()" id="publishTermsBtn" class="hidden"> <i class="fi fi-rr-file-signature"></i> <span class="text">Nuevos Términos</span> </button>
+				<button onclick="gotoPage('termsreview')" id="termsReviewBtn" class="hidden"> <i class="fi fi-rr-shield-check"></i> <span class="text">Revisión Términos</span> </button>
 			</div>
 		</div>
-
 
 		<div class="bottom">
 			<button onclick="gotoPage('settings')"> <i class="fi fi-rr-settings"></i> <span class="text">Configuración</span> </button>
@@ -121,13 +140,15 @@
 	<div class="leftside">
 		<span class="time">00:00 AM</span>
 		<button onclick="document.getElementById('header').classList.toggle('displaySearch')" class="closeTouchSearchBtn"><i class="fi fi-br-cross"></i></i></button>
-		<button onclick="document.getElementById('header').classList.toggle('displaySearch')" class="touchSearchBtn"><i class="fi fi-rr-search"></i></button>
-		<button onclick="manualIdleLock()" data-tooltip="Bloquear Plataforma (idle)"><i class="fi fi-rr-lock"></i></button>
+		<button onclick="document.getElementById('header').classList.toggle('displaySearch')" class="touchSearchBtn hideOnOverflow hidden"><i class="fi fi-rr-search"></i></button>
+		<button onclick="createStickyNote()" data-tooltip="Nueva nota" class="hideOnOverflow"><i class="fi fi-rr-notebook"></i></button>
+		<button onclick="manualIdleLock()" data-tooltip="Bloquear Plataforma (idle)" class="hideOnOverflow"><i class="fi fi-rr-lock"></i></button>
 		<button onclick="toggleNotificationsDialog()" class="notifBtn" data-tooltip="Notificaciones">
 			<i class="fi fi-rr-bell-notification-social-media"></i>
 			<span id="notifications-badge" class="hidden">0</span>
 		</button>
 		<button onclick="document.getElementById('logoutDialog').classList.toggle('show')" data-tooltip="Cerrar Sesión"><i class="fi fi-rr-exit"></i></button>
+		<button data-tooltip="Mas Opciones" class="showOnOverflow" id="headerMoreOptionsBtn"><i class="fi fi-bs-menu-dots-vertical"></i></button>
 	</div>
   </header>
   <div id="logoutDialog">
@@ -138,43 +159,48 @@
 	<h4>Notificaciones</h4>
 	<div id="notifications-list"><span class="empty"><i class="fi fi-rr-party-horn"></i> No tienes notificaciones :D</span></div>
   </div>
+  <div id="headerMoreOptionsDialog">
+	<button id="headerMoreOptionsDialog_btnSearch"><i class="fi fi-rr-search"></i> Buscar</button>
+	<button id="headerMoreOptionsDialog_btnLock"><i class="fi fi-rr-lock"></i> Bloq. Plataforma</button>
+	<button id="headerMoreOptionsDialog_btnSticky"><i class="fi fi-rr-notebook"></i> Nueva nota</button>
+  </div>
 
   <div id="loadingModal" class="hidden">
 	<img alt="Loading Icon" src="/assets/loading.gif">
 	<span>Cargando...</span>
   </div>
 
-  <div class="msgbox-overlay hide" id="msgbox-overlay">
-	<div class="msgbox-modal">
-		<i class="fi fi-rs-check-circle"></i>
-		<h2 class="title">Éxito!</h2>
-		<span class="info">dummy string</span>
-		<input class="inputText hidden" type="text" placeholder="Respuesta..." autocomplete="off">
-		<div class="buttons_wrapper">
-			<button class="option1 hidden">Cancelar</button>
-			<button class="option2">Aceptar</button>
+	<div class="msgbox-overlay hide" id="msgbox-overlay">
+		<div class="msgbox-modal">
+			<i class="fi fi-rs-check-circle"></i>
+			<h2 class="title">Éxito!</h2>
+			<span class="info">dummy string</span>
+			<input class="inputText hidden" type="text" placeholder="Respuesta..." autocomplete="off">
+			<div class="buttons_wrapper">
+				<button class="option1 hidden">Cancelar</button>
+				<button class="option2">Aceptar</button>
+			</div>
 		</div>
 	</div>
-  </div>
 
-  <div id="softLockOverlay">
-	<img alt="Account Profile Photo" src="/assets/bg.png" id="softLockPFPImg">
-	<span>Ingresa tu PIN para reanudar la sesión</span>
-	<div class="bottom_wrapper">
-		<input type="text" id="softlockInput" maxlength="6">
-		<button onclick="verifySoftLockPIN()"><i class="fi fi-rr-arrow-right"></i></button>
+	<div id="softLockOverlay">
+		<img alt="Account Profile Photo" src="/assets/bg.png" id="softLockPFPImg">
+		<span>Ingresa tu PIN para reanudar la sesión</span>
+		<div class="bottom_wrapper">
+			<input type="text" id="softlockInput" maxlength="6">
+			<button onclick="verifySoftLockPIN()"><i class="fi fi-rr-arrow-right"></i></button>
+		</div>
+		<span id="softLockError">PIN Incorrecto</span>
 	</div>
-	<span id="softLockError">PIN Incorrecto</span>
-  </div>
 
-  <div id="softLockAlertOverlay">
-	<div class="softLockAlert">
-		<span><strong>Alerta</strong><br>Por inactividad, se cerrara la sesion actual en 1 minuto. Si necesita más tiempo, presione "Extender Sesión".</span>
-		<div class="btns">
-			<button onclick="softLockAlert_extendSession()"><i class="fi fi-sr-clock"></i> Extender sesión</button>
+	<div id="softLockAlertOverlay">
+		<div class="softLockAlert">
+			<span><strong>Alerta</strong><br>Por inactividad, se cerrara la sesion actual en 1 minuto. Si necesita más tiempo, presione "Extender Sesión".</span>
+			<div class="btns">
+				<button onclick="softLockAlert_extendSession()"><i class="fi fi-sr-clock"></i> Extender sesión</button>
+			</div>
 		</div>
 	</div>
-  </div>
   	<div id="maintenanceWarningOverlay">
 		<div class="maintenanceWarningBox">
 			<i class="fi fi-rr-tools"></i>
@@ -182,18 +208,39 @@
 			<button onclick="document.getElementById('maintenanceWarningOverlay').classList.remove('show')">Entendido</button>
 		</div>
 	</div>
+	<div id="termsBlockOverlay">
+		<div class="termsBlockBox">
+			<i class="fi fi-rr-file-signature"></i>
+			<h2>Nuevos Términos y Condiciones</h2>
+			<span>Por favor, lea y acepte los terminos y condiciones.</span>
+			<button onclick="taskOpenFilePreview('/assets/clientside_files/terminosycondiciones_file.pdf')"><i class="fi fi-rr-eye"></i> Leer Términos y Condiciones</button>
+			<button onclick="acceptTerms()" id="acceptTermsBtn"><i class="fi fi-br-check"></i> Acepto los Términos</button>
+		</div>
+	</div>
 
-  <div id="filePreview" class="hidden">
-	<button><i class="fi fi-br-cross"></i></button>
-	<div class="loading">
-		<img alt="Loading Icon" src="/assets/loading.gif">
-		<span>Cargando...</span>
+	<div id="filePreview" class="hidden">
+		<button class="close"><i class="fi fi-br-cross"></i></button>
+		<div class="loading">
+			<img alt="Loading Icon" src="/assets/loading.gif">
+			<span>Cargando...</span>
+		</div>
+		<div class="preview">
+			<img alt="File Preview" class="image hidden">
+			<iframe class="pdfviewer hidden"></iframe>
+			<div class="pdfViewerWrapper hidden">
+				<div class="pdfControls">
+					<button onclick="pdfZoomOut()"><i class="fi fi-rr-zoom-out"></i></button>
+					<button onclick="pdfZoomIn()"><i class="fi fi-rr-zoom-in"></i></button>
+					<span><span id="pdfPageNum">1</span> / <span id="pdfPageCount">1</span></span>
+					<button id="pdfPrevBtn" onclick="pdfPrevPage()"><i class="fi fi-rr-angle-left"></i></button>
+					<button id="pdfNextBtn" onclick="pdfNextPage()"><i class="fi fi-rr-angle-right"></i></button>
+				</div>
+				<div class="pdfCanvasScroll">
+					<canvas id="pdfCanvas"></canvas>
+				</div>
+			</div>
+		</div>
 	</div>
-	<div class="preview">
-		<img alt="File Preview" class="image hidden">
-		<iframe class="pdfviewer hidden"></iframe>
-	</div>
-  </div>
 
   <section class="page hidden" id="page_login">
 	<div id="maintenanceScreen" class="hidden">
@@ -215,7 +262,7 @@
 		<a href="#" id="login_reset_password" class="hidden">Restablecer Contraseña</a>
 		<img alt="loading" src="/assets/loading.gif" class="hidden" id="login-loading">
 		<div class="text">
-			<span>Departamento de Sistemas | BreadNet v1.0.0</span>
+			<span>Departamento de Sistemas | BreadNet v1.0.1</span>
 			<span>Este sistema es exclusivo de uso privado.</span>
 		</div>
 	</div>
@@ -241,6 +288,7 @@
 					<span class="title">Bienvenido!</span>
 				</div>
 				<span class="status">Todo correcto por aqui!</span>
+				<button class="gotoStrikesBtn hidden" onclick="gotoPage('strikes')">Ver mis strikes <i class="fi fi-rr-arrow-right"></i></button>
 			</div>
 			<div class="widget status_ok" id="dashboard_widget_tasks">
 				<div class="header">
@@ -254,6 +302,29 @@
 					<span class="newsPreviewTitle empty" id="newsPreviewTitle">Sin Novedades</span>
 					<button onclick="gotoPage('news')">Ver Mas <i class="fi fi-rr-arrow-right"></i></button>
 				</div>
+			</div>
+			<div class="widget status_ok" id="dashboard_widget_quickascess">
+				<div class="header">
+					<i class="fi fi-rr-apps"></i>
+					<span class="title">Acceso Rápido</span>
+				</div>
+				<div class="row">
+					<button onclick="gotoPage('store')"><i class="fi fi-sr-shopping-bag"></i> Tienda</button>
+					<button onclick="gotoPage('chat')"><i class="fi fi-sr-messages"></i> Chat</button>
+					<button onclick="gotoPage('news')"><i class="fi fi-sr-resources"></i> Novedades</button>
+				</div>
+			</div>
+			<div class="widget status_info" id="dashboard_widget_weather">
+				<div class="weatherPreviewBg" id="weatherPreviewBg">
+					<span class="weatherTitle" id="weatherTitle">Clima | --°</span>
+				</div>
+			</div>
+			<div class="widget status_info" id="dashboard_widget_quickactions">
+				<div class="header">
+					<i class="fi fi-rr-bolt"></i>
+					<span class="title">Acciones Rápidas</span>
+				</div>
+				<div id="quickActionsButtons"></div>
 			</div>
 		</div>
 	</div>
@@ -281,6 +352,8 @@
 	<section class="right">
 		<span>Asignar a:</span>
 		<select id="task-assignee"></select>
+		<span>Fecha limite opcional:</span>
+		<input type="date" id="task-deadline">
 		<button id="btn-create-task"><i class="fi fi-br-check"></i> Asignar Tarea</button>
 	</section>
   </section>
@@ -357,6 +430,21 @@
 				<span class="name">Renuncia</span>
 				<div class="btns"><button onclick="sendRequest('Renuncia')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
 			</div>
+			<div class="element">
+				<div class="preview"><img alt="Request Preview" src="/assets/checkOptions.png"></div>
+				<span class="name">Apelar Strike</span>
+				<div class="btns"><button onclick="sendRequest('Apelar Strike')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
+			</div>
+			<div class="element">
+				<div class="preview"><img alt="Request Preview" src="/assets/fight.png"></div>
+				<span class="name">Reportar Conflicto</span>
+				<div class="btns"><button onclick="sendRequest('Reportar Conflicto')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
+			</div>
+			<div class="element">
+				<div class="preview"><img alt="Request Preview" src="/assets/optionsInGrid.png"></div>
+				<span class="name">Otro</span>
+				<div class="btns"><button onclick="sendRequest('Otro')">Solicitar <i class="fi fi-rr-arrow-right"></i></button></div>
+			</div>
 		</div>
 
 		<span class="subtitle">Tus solicitudes:</span>
@@ -395,6 +483,11 @@
 		<img alt="Account Profile Photo" src="/assets/userdefault.jpg" id="strikesPagePFPimg">
 		<div class="generalBrief">
 			<span class="title" id="briefTitle">Tienes un <c-gradient>buen desempeño</c-gradient>!</span>
+			<div class="row">
+				<span id="briefCatPoints"><i class="fi fi-rr-star"></i> <strong id="catPointsValue">0</strong> CatPoints</span>
+				<span id="briefLoginStreak"><i class="fi fi-rr-flame"></i> Racha: <strong id="loginStreakValue">0</strong> días</span>
+			</div>
+
 			<span id="briefStrikesCount"></span>
 			<span id="briefTasksCheck"><i class="fi fi-br-check"></i> Has entregado todos tus trabajos</span>
 			<span id="briefFrequencyCheck"><i class="fi fi-br-check"></i> Has ingresado a la plataforma con frecuencia</span>
@@ -424,6 +517,11 @@
 		<h4>Áreas de trabajo</h4>
 		<input type="text" id="working-areas-input" placeholder="Áreas separadas por coma (ej. Diseño, Programación)">
 		<button onclick="saveWorkingAreas()">Guardar Áreas</button>
+
+		<h4>CatPoints</h4>
+		<span>Actual: <strong id="manage-catpoints-display">0</strong></span>
+		<input type="number" id="catpoints-to-add" placeholder="Cantidad a otorgar" min="1">
+		<button onclick="grantCatPoints()"><i class="fi fi-rr-star"></i> Otorgar CatPoints</button>
 
 		<h4>Agregar Strike</h4>
 		<input type="text" id="strike-short-reason" placeholder="Motivo breve (obligatorio)">
@@ -509,13 +607,21 @@
 
 		<h4>Estado de seguridad por usuario</h4>
 		<div id="stats-security-status"></div>
+
+		<h4>Dispositivos</h4>
+		<div id="stats-devices"></div>
+
+		<h4>Sistemas Operativos</h4>
+		<div id="stats-os"></div>
 	</section>
 
   <section class="page hidden" id="page_settings">
 	<h3>Configuración</h3>
 	<h4>Cuenta</h4>
 	<div class="row">
-		<img class="pfp" alt="Account Profile Photo" src="/assets/userdefault.jpg" id="settings_pfp">
+		<div class="pfp-frame-wrapper">
+			<img class="pfp" alt="Account Profile Photo" src="/assets/userdefault.jpg" id="settings_pfp">
+		</div>
 		<span id="settings_displayName">Usuario</span>
 		<button onclick="setting_changePFP()"><i class="fi fi-rr-picture"></i> Cambiar foto de perfil</button>
 	</div>
@@ -537,6 +643,9 @@
 			<option value="300000">Luego de 5 minutos</option>
 		</select>
 	</div>
+
+	<h4>Mi Inventario</h4>
+	<div id="inventory-list"></div>
   </section>
 
  	<section class="page hidden" id="page_feedback">
@@ -612,6 +721,63 @@
 		<h3>Perdida</h3>
 		<span>En caso de perdida o robo, abra inmediatamente una solicitud para mayor seguridad.</span>
 		<button onclick="gotoPage('requests')" style="margin-top: 12px;">Ir a solicitudes</button>
+	</section>
+
+	<section class="page hidden" id="page_store">
+		<h3>Tienda de CatPoints</h3>
+		<span>Tus CatPoints: <strong id="store-my-points">0</strong></span>
+
+		<div id="admin-store-manage" class="hidden">
+			<h4>Agregar Producto</h4>
+			<input type="text" id="new-item-name" placeholder="Nombre" maxlength="22">
+			<textarea id="new-item-desc" placeholder="Descripción" maxlength="54"></textarea>
+			<input type="number" id="new-item-cost" placeholder="Costo en CatPoints">
+			<input type="file" id="new-item-image" accept="image/*">
+			<select id="new-item-type">
+				<option value="wallpaper">Fondo de Pantalla</option>
+				<option value="frame">Marco de Perfil</option>
+				<option value="tag">Tag Exclusivo</option>
+				<option value="extension_24h">Extensión 24h</option>
+				<option value="extension_48h">Extensión 48h</option>
+				<option value="custom_announcement">Anuncio Custom</option>
+				<option value="section_access">Acceso a Sección</option>
+				<option value="custom">Personalizado (avisa al CEO)</option>
+			</select>
+			<button onclick="createStoreItem()">Agregar Producto</button>
+		</div>
+
+		<div id="store-items-list"></div>
+	</section>
+	<section class="page hidden" id="page_chat">
+		<div id="pageChat_chatsList">
+			<div class="chatListHeader">
+				<button onclick="openNewChatModal()"><i class="fi fi-rr-user-add"></i> Nuevo Chat</button>
+				<button onclick="openNewGroupModal()" id="newGroupBtn" class="hidden"><i class="fi fi-rr-users-alt"></i> Nuevo Grupo</button>
+			</div>
+			<div id="chatsListContainer"></div>
+		</div>
+		<div class="chatContainer">
+			<div class="chatHeader">
+				<button id="pageChat_chatGoBackBtnMb"><i class="fi fi-br-angle-left"></i></button>
+				<div class="pfp-frame-wrapper"><img src="/assets/userdefault.jpg" alt="Profile Photo" id="chatHeaderImg"></div>
+				<span class="chatName" id="chatHeaderName">Selecciona un chat</span>
+				<button id="manageGroupBtn" class="hidden" onclick="openManageGroupModal()"><i class="fi fi-rr-settings"></i></button>
+			</div>
+			<div id="pageChat_chatMessages"></div>
+			<div class="chatBottomCom">
+				<input type="text" id="pageChat_chatTextInput" placeholder="Mensaje...">
+				<button><i class="fi fi-ss-paper-plane"></i></button>
+			</div>
+		</div>
+	</section>
+	<section class="page hidden" id="page_termsreview">
+		<h3>Revisión de Términos y Condiciones</h3>
+		<div id="termsReviewStatus"></div>
+		<button onclick="endTermsReview()" class="danger-btn hidden" id="endTermsReviewBtn">Finalizar Revisión</button>
+		<span class="subtitle">Aceptados:</span>
+		<div id="termsAcceptedList"></div>
+		<span class="subtitle">Pendientes:</span>
+		<div id="termsPendingList"></div>
 	</section>
 
 
@@ -696,6 +862,42 @@
 		<h4><i class="fi fi-sr-interrogation"></i> ¿No encontraste lo que buscabas?</h4>
 		<span>Si necesitas mas ayuda, puedes contactar con un administrador de Just A Bread Studios.</span>
 	</section>
+	<div id="newChatModal" class="modal-overlay">
+		<div class="modal-box">
+			<div class="modalHeader">
+				<h3>Nuevo Chat</h3>
+				<button onclick="closeModal('newChatModal')" class="modalCloseBtn"><i class="fi fi-br-cross"></i></button>
+			</div>
+			<input type="text" id="newChatSearchInput" placeholder="Buscar persona...">
+			<div id="newChatPeopleList"></div>
+		</div>
+	</div>
+
+	<div id="newGroupModal" class="modal-overlay">
+		<div class="modal-box">
+			<div class="modalHeader">
+				<h3>Nuevo Grupo</h3>
+				<button onclick="closeModal('newGroupModal')" class="modalCloseBtn"><i class="fi fi-br-cross"></i></button>
+			</div>
+			<input type="text" id="newGroupNameInput" placeholder="Nombre del grupo">
+			<span>Selecciona miembros:</span>
+			<div id="newGroupPeopleList"></div>
+			<button onclick="submitNewGroup()"><i class="fi fi-rr-check"></i> Crear Grupo</button>
+		</div>
+	</div>
+
+	<div id="manageGroupModal" class="modal-overlay">
+		<div class="modal-box">
+			<div class="modalHeader">
+				<h3>Administrar Grupo</h3>
+				<button onclick="closeModal('manageGroupModal')" class="modalCloseBtn"><i class="fi fi-br-cross"></i></button>
+			</div>
+			<span class="subtitle">Miembros:</span>
+			<div id="manageGroupMembersList"></div>
+			<span class="subtitle">Agregar más miembros:</span>
+			<div id="manageGroupAddList"></div>
+		</div>
+	</div>
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="app.js"></script>
 </body>
